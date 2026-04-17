@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #EBF6FE;
+  --color-brand-100: #D6EDFD;
+  --color-brand-200: #A8DAFB;
+  --color-brand-300: #7AC7F9;
+  --color-brand-400: #54B5F9;
+  --color-brand-500: #2FA4F9;
+  --color-brand-600: #1B8AD8;
+  --color-brand-700: #1670B0;
+  --color-brand-800: #115788;
+  --color-brand-900: #0B3F63;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- Base ---------- */
+html, body, #root { height: 100%; }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; color: #0F172A; margin: 0; }
+button, [role="button"], a, label[for], select, summary, [tabindex]:not([tabindex="-1"]) { cursor: pointer; }
+
+/* ---------- Elevation tokens ---------- */
+.elev-1 { box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06); }
+.elev-2 { box-shadow: 0 4px 10px rgba(15,23,42,.04), 0 2px 4px rgba(15,23,42,.04); }
+.elev-3 { box-shadow: 0 8px 24px rgba(15,23,42,.06), 0 3px 6px rgba(15,23,42,.04); }
+.elev-brand { box-shadow: 0 6px 16px rgba(47,164,249,.30); }
+
+/* ---------- Scrollbar ---------- */
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+.scroll-thin::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
+.scroll-thin::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* ---------- Gradient ---------- */
+.gradient-bg { background: linear-gradient(135deg, #2FA4F9 0%, #7B5BFF 100%); }
+.gradient-bg-strong { background: linear-gradient(135deg, #1B8AD8 0%, #6D28D9 100%); }
+.gradient-text { background: linear-gradient(135deg, #2FA4F9, #7B5BFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* ---------- Ripple ---------- */
+.ripple { position: relative; overflow: hidden; }
+.ripple::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(47,164,249,.08) 0%, transparent 70%); opacity: 0; transition: opacity .3s; pointer-events: none; }
+.ripple:active::after { opacity: 1; }
+
+/* ---------- Typing dots ---------- */
+@keyframes pulseDot { 0%,80%,100% { transform: scale(.6); opacity: .4 } 40% { transform: scale(1); opacity: 1 } }
+.typing-dot { animation: pulseDot 1.3s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation-delay: .15s; }
+.typing-dot:nth-child(3) { animation-delay: .30s; }
+
+/* ---------- Ping dot ---------- */
+@keyframes pingDot { 0% { transform: scale(1); opacity: .9; } 75%,100% { transform: scale(2.4); opacity: 0; } }
+.ping-dot { position: relative; }
+.ping-dot::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2FA4F9; animation: pingDot 1.6s cubic-bezier(0,0,.2,1) infinite; }
+
+/* ---------- Caret blink ---------- */
+@keyframes caret { 0%,70% { opacity: 1; } 71%,100% { opacity: 0; } }
+.caret { display: inline-block; width: 2px; height: 1em; background: #2FA4F9; border-radius: 1px; vertical-align: text-bottom; animation: caret 1s step-end infinite; margin-left: 2px; }
+
+/* ---------- Animations ---------- */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-up { animation: fadeUp .4s ease-out both; }
+
+@keyframes rowIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+.row-in { animation: rowIn .25s ease-out both; }
+
+/* ---------- Tool chip ---------- */
+.tool-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 600;
+  background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;
+  font-family: 'Inter', system-ui, sans-serif; letter-spacing: 0.01em;
+}
+.tool-chip .tc-ms { color: #94A3B8; font-weight: 500; }
+
+/* ---------- Trust tabs ---------- */
+.trust-tab { font-size: 12px; padding: 6px 10px; border-bottom: 2px solid transparent; color: #64748B; cursor: pointer; white-space: nowrap; font-weight: 500; }
+.trust-tab:hover { color: #334155; }
+.trust-tab.active { border-color: #2FA4F9; color: #1B8AD8; font-weight: 600; }
+
+/* ---------- Source popover ---------- */
+.src-pop { position: relative; cursor: pointer; }
+.src-pop .src-tt { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 6px 10px; border-radius: 8px; background: #0F172A; color: #F8FAFC; font-size: 11px; white-space: nowrap; z-index: 30; pointer-events: none; }
+.src-pop:hover .src-tt, .src-pop:focus .src-tt { display: block; }
+
+/* ---------- Branch chip ---------- */
+.branch-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; padding: 6px 12px; border-radius: 9999px; border: 1px solid #E2E8F0; color: #475569; background: #fff; cursor: pointer; white-space: nowrap; transition: all .15s; font-weight: 500; flex-shrink: 0; }
+.branch-btn:hover { background: #EBF6FE; color: #1B8AD8; border-color: #A8DAFB; }
+
+/* ---------- Citation chip ---------- */
+.cite { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 4px; background: #EBF6FE; color: #1B8AD8; font-size: 9.5px; font-weight: 700; vertical-align: super; margin: 0 1px; cursor: default; position: relative; }
+.cite .cite-tt { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #0F172A; color: #F8FAFC; padding: 6px 10px; border-radius: 8px; white-space: nowrap; font-size: 11px; font-weight: 400; z-index: 40; pointer-events: none; }
+.cite:hover .cite-tt, .cite:focus .cite-tt { display: block; }
+
+/* ---------- Hide scrollbar utility ---------- */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ---------- Thread divider ---------- */
+.thread-divider { height: 1px; background: repeating-linear-gradient(90deg, #CBD5E1 0, #CBD5E1 4px, transparent 4px, transparent 8px); }
