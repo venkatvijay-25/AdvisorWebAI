@@ -1,7 +1,7 @@
 import React from 'react';
 import type { IcoProps } from '../icons';
 
-export type ButtonKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft';
+export type ButtonKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft' | 'outline';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps
@@ -43,6 +43,7 @@ export const Button: React.FC<ButtonProps> = ({
     ghost: 'text-slate-600 hover:bg-slate-100',
     danger: 'bg-rose-500 text-white hover:bg-rose-600',
     soft: 'bg-brand-50 text-brand-700 hover:bg-brand-100',
+    outline: 'bg-white border border-brand-300 text-brand-700 hover:bg-brand-50',
   };
 
   const iconSize = size === 'sm' ? 14 : 16;

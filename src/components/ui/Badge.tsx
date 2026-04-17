@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type BadgeTone = 'neutral' | 'brand' | 'success' | 'warn' | 'danger' | 'purple';
+export type BadgeTone = 'neutral' | 'brand' | 'success' | 'warn' | 'danger' | 'purple' | 'muted';
 
 export interface BadgeProps {
   children: React.ReactNode;
@@ -24,6 +24,7 @@ export const Badge: React.FC<BadgeProps> = ({
     warn: 'bg-amber-50 text-amber-700',
     danger: 'bg-rose-50 text-rose-700',
     purple: 'bg-violet-50 text-violet-700',
+    muted: 'bg-slate-50 text-slate-500',
   };
 
   return (

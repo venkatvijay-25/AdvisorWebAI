@@ -29,7 +29,7 @@ import type { HistoryItem } from '@/types';
 export interface SidebarProps {
   view: string;
   setView: (view: string) => void;
-  openTemplate: (templateId: string, client?: string | null, title?: string) => void;
+  openTemplate: (templateId: string, client?: any, title?: string) => void;
   recents: HistoryItem[];
   currentChatId?: string;
   onNewChat: () => void;

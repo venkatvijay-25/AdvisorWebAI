@@ -200,7 +200,7 @@ interface HomeViewProps {
   recents: HistoryItem[];
   openHistory: (h: HistoryItem) => void;
   openTemplateFromPrompt: (text: string, chips: any[]) => void;
-  setView: (view: string) => void;
+  setView: (view: any) => void;
 }
 
 /**
