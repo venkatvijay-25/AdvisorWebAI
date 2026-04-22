@@ -7,11 +7,15 @@ import {
   IconSend,
   IconEdit,
   IconCopy,
-  IconTarget,
   IconClock,
   IconLayers,
   IconZap,
   IconChevronDown,
+  IconLink,
+  IconChat,
+  IconCheck,
+  IconBar,
+  IconAlert,
 } from '@/components/icons';
 import { Badge, Button, Card, KPI } from '@/components/ui';
 import { CAMPAIGNS, CAMPAIGN_TEMPLATES } from '@/data/campaigns';
@@ -55,6 +59,166 @@ const FILTERS: { id: StatusFilter; label: string }[] = [
 ];
 
 /* ================================================================
+   AnalyticsPanel — expanded detail analytics for sent campaigns
+   ================================================================ */
+const AnalyticsPanel: React.FC<{ c: Campaign }> = ({ c }) => {
+  if (c.status !== 'sent') return null;
+
+  return (
+    <div className="space-y-5 mt-4 pt-4 border-t border-slate-200/70">
+      {/* Section header */}
+      <div className="flex items-center gap-1.5">
+        <IconBar size={14} stroke="#2FA4F9" />
+        <span className="text-[11px] uppercase tracking-wider font-semibold text-brand-600">
+          Engagement Analytics
+        </span>
+      </div>
+
+      {/* Engagement timeline */}
+      {c.engagementTimeline && (
+        <div className="rounded-xl bg-gradient-to-r from-brand-50 to-violet-50 border border-brand-200 px-4 py-3">
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Timeline</div>
+          <div className="text-[13px] font-medium text-slate-700">{c.engagementTimeline}</div>
+        </div>
+      )}
+
+      {/* Open rate bar */}
+      <div>
+        <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2">Open Rate</div>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-5 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${c.openRate ?? 0}%`, background: 'linear-gradient(90deg, #2FA4F9, #10B981)' }}
+            />
+          </div>
+          <span className="text-sm font-bold text-slate-800 w-14 text-right">{c.openRate?.toFixed(1)}%</span>
+        </div>
+      </div>
+
+      {/* Click-through breakdown */}
+      {c.linkClicks && c.linkClicks.length > 0 && (
+        <div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2">Click-Through Breakdown</div>
+          <div className="space-y-2">
+            {c.linkClicks.map((link) => (
+              <div key={link.label} className="flex items-center gap-3">
+                <IconLink size={12} stroke="#64748B" />
+                <span className="text-[13px] text-slate-700 w-40 truncate">{link.label}</span>
+                <div className="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-brand-400"
+                    style={{ width: `${link.pct}%` }}
+                  />
+                </div>
+                <span className="text-xs font-semibold text-slate-600 w-10 text-right">{link.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Reply tracking & Unsubscribes row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Reply tracking */}
+        {c.replyCount != null && (
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center gap-1.5 mb-3">
+              <IconChat size={13} stroke="#2FA4F9" />
+              <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">Reply Tracking</span>
+            </div>
+            <div className="text-2xl font-bold text-slate-900 mb-2">{c.replyCount} <span className="text-sm font-medium text-slate-500">replies received</span></div>
+            {c.replySentiment && (
+              <div className="flex items-center gap-4 text-[13px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-slate-600">Positive</span>
+                  <span className="font-semibold text-slate-800">{c.replySentiment.positive}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-slate-400" />
+                  <span className="text-slate-600">Neutral</span>
+                  <span className="font-semibold text-slate-800">{c.replySentiment.neutral}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-rose-500" />
+                  <span className="text-slate-600">Negative</span>
+                  <span className="font-semibold text-slate-800">{c.replySentiment.negative}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Unsubscribe management */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <IconAlert size={13} stroke="#F59E0B" />
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">Unsubscribes</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-2xl font-bold text-slate-900">{c.unsubscribes ?? 0}</div>
+            <div className="text-[13px] text-slate-500">
+              {(c.unsubscribes ?? 0) === 0
+                ? 'No unsubscribes — great deliverability'
+                : `${(((c.unsubscribes ?? 0) / c.recipientCount) * 100).toFixed(1)}% unsubscribe rate`}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* A/B Test results */}
+      {c.abTest && (
+        <div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2">A/B Test Results</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(['A', 'B'] as const).map((variant) => {
+              const data = variant === 'A' ? c.abTest!.variantA : c.abTest!.variantB;
+              const isWinner = c.abTest!.winner === variant;
+              return (
+                <div
+                  key={variant}
+                  className={`rounded-xl border p-4 relative overflow-hidden ${
+                    isWinner ? 'border-brand-300 bg-brand-50/40' : 'border-slate-200 bg-white'
+                  }`}
+                >
+                  {isWinner && (
+                    <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-brand-400 to-emerald-400" />
+                  )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      isWinner ? 'bg-brand-500 text-white' : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      Variant {variant}
+                    </span>
+                    {isWinner && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        <IconCheck size={10} stroke="currentColor" /> Winner
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[12.5px] text-slate-600 mb-3 italic">"{data.subject}"</div>
+                  <div className="flex items-center gap-6 text-[13px]">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400">Open Rate</div>
+                      <div className="font-bold text-slate-800">{data.openRate}%</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400">CTR</div>
+                      <div className="font-bold text-slate-800">{data.ctr}%</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ================================================================
    CampaignCard
    ================================================================ */
 const CampaignCard: React.FC<{
@@ -82,6 +246,11 @@ const CampaignCard: React.FC<{
               {c.personalized && (
                 <Badge tone="brand" className="gap-1">
                   <IconSparkles size={10} stroke="currentColor" /> AI Personalized
+                </Badge>
+              )}
+              {c.unsubscribes != null && c.unsubscribes > 0 && (
+                <Badge tone="warn" className="gap-1">
+                  {c.unsubscribes} unsub
                 </Badge>
               )}
             </div>
@@ -173,6 +342,9 @@ const CampaignCard: React.FC<{
               </div>
             </div>
           )}
+
+          {/* Analytics panel for sent campaigns */}
+          <AnalyticsPanel c={c} />
         </div>
       )}
     </Card>
@@ -206,6 +378,14 @@ export const CampaignsView: React.FC = () => {
   const avgOpen = sentWithRate.length ? sentWithRate.reduce((a, c) => a + (c.openRate ?? 0), 0) / sentWithRate.length : 0;
   const aiCount = campaigns.filter((c) => c.personalized).length;
 
+  /* New KPIs */
+  const sentWithClick = campaigns.filter((c) => c.status === 'sent' && c.clickRate != null);
+  const avgClick = sentWithClick.length ? sentWithClick.reduce((a, c) => a + (c.clickRate ?? 0), 0) / sentWithClick.length : 0;
+  const totalReplies = campaigns.filter((c) => c.status === 'sent').reduce((a, c) => a + (c.replyCount ?? 0), 0);
+  const replyRate = reached > 0 ? (totalReplies / reached) * 100 : 0;
+  const totalUnsubs = campaigns.reduce((a, c) => a + (c.unsubscribes ?? 0), 0);
+  const unsubRate = reached > 0 ? (totalUnsubs / reached) * 100 : 0;
+
   return (
     <div className="max-w-5xl mx-auto px-8 py-8">
       {/* header */}
@@ -223,12 +403,19 @@ export const CampaignsView: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI strip */}
-      <div className="grid grid-cols-4 gap-4 mb-6 fade-up">
+      {/* KPI strip — row 1 */}
+      <div className="grid grid-cols-4 gap-4 mb-3 fade-up">
         <KPI label="Active campaigns" value={active} sub="non-draft" accent="#2FA4F9" />
         <KPI label="Recipients reached" value={reached} sub="sent campaigns" accent="#10B981" />
         <KPI label="Avg open rate" value={`${avgOpen.toFixed(1)}%`} sub="across sent" accent="#F59E0B" />
         <KPI label="AI personalized" value={aiCount} sub={`of ${campaigns.length} campaigns`} accent="#2FA4F9" />
+      </div>
+
+      {/* KPI strip — row 2 (new engagement KPIs) */}
+      <div className="grid grid-cols-3 gap-4 mb-6 fade-up">
+        <KPI label="Avg click-through rate" value={`${avgClick.toFixed(1)}%`} sub="link clicks / opens" accent="#2FA4F9" />
+        <KPI label="Reply rate" value={`${replyRate.toFixed(1)}%`} sub={`${totalReplies} total replies`} accent="#8B5CF6" />
+        <KPI label="Unsubscribe rate" value={`${unsubRate.toFixed(1)}%`} sub={`${totalUnsubs} total`} accent={totalUnsubs === 0 ? '#10B981' : '#F59E0B'} />
       </div>
 
       {/* tab bar */}

@@ -23,6 +23,9 @@ import {
   IconMail,
   IconSparkles,
   IconStar,
+  IconHousehold,
+  IconFilter,
+  IconReceipt,
 } from '@/components/icons';
 import type { HistoryItem } from '@/types';
 
@@ -170,6 +173,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => setView('clients')}
           />
           <NavItem
+            id="households"
+            icon={IconHousehold}
+            label="Households"
+            badge="4"
+            active={view === 'households'}
+            onClick={() => setView('households')}
+          />
+          <NavItem
             id="library"
             icon={IconLayers}
             label="Template library"
@@ -183,6 +194,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
             badge="3"
             active={view === 'insights'}
             onClick={() => setView('insights')}
+          />
+          <NavItem
+            id="goals"
+            icon={IconCompass}
+            label="Financial planning"
+            active={view === 'goals'}
+            onClick={() => setView('goals')}
+          />
+          <NavItem
+            id="team"
+            icon={IconUsers}
+            label="Team"
+            badge="2"
+            active={view === 'team'}
+            onClick={() => setView('team')}
           />
           <NavItem
             id="history"
@@ -215,6 +241,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => setView('autopilot')}
             />
             <NavItem
+              id="trades"
+              icon={IconReceipt}
+              label="Trade blotter"
+              badge="3"
+              active={view === 'trades'}
+              onClick={() => setView('trades')}
+            />
+            <NavItem
               id="batch"
               icon={IconLayers}
               label="Batch actions"
@@ -234,6 +268,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               label="Model portfolios"
               active={view === 'models'}
               onClick={() => setView('models')}
+            />
+            <NavItem
+              id="pipeline"
+              icon={IconFilter}
+              label="Prospect pipeline"
+              badge="8"
+              active={view === 'pipeline'}
+              onClick={() => setView('pipeline')}
             />
             <NavItem
               id="compliance"

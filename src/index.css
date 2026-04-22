@@ -63,6 +63,9 @@ button, [role="button"], a, label[for], select, summary, [tabindex]:not([tabinde
 @keyframes rowIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
 .row-in { animation: rowIn .25s ease-out both; }
 
+@keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+.animate-slide-in { animation: slideInRight .3s ease-out both; }
+
 /* ---------- Tool chip ---------- */
 .tool-chip {
   display: inline-flex; align-items: center; gap: 4px;

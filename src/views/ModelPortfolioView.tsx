@@ -106,7 +106,7 @@ const DetailPanel: React.FC<{
 
       {/* Allocation table + bar */}
       <Card className="fade-up">
-        <SectionTitle icon={<IconLayers size={16} />} title="Target Allocations" />
+        <SectionTitle icon={IconLayers} title="Target Allocations" />
         <AllocBar allocs={adjustedAllocs} h={14} />
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
@@ -142,7 +142,7 @@ const DetailPanel: React.FC<{
 
       {/* Client impact */}
       <Card className="fade-up">
-        <SectionTitle icon={<IconUsers size={16} />} title={`Clients on this model (${impactedCount})`} />
+        <SectionTitle icon={IconUsers} title={`Clients on this model (${impactedCount})`} />
         <div className="space-y-2 mt-3">
           {clients.map((c) => (
             <div key={c.id} className="row-in flex items-center justify-between p-3 rounded-xl bg-slate-50/80 hover:bg-slate-100/80 transition-colors">
@@ -168,7 +168,7 @@ const DetailPanel: React.FC<{
 
       {/* Cascade simulator */}
       <Card className="fade-up border-2 border-[#2FA4F9]/20 bg-gradient-to-br from-sky-50/40 to-white">
-        <SectionTitle icon={<IconSparkles size={16} stroke="#2FA4F9" />} title="What-if: Propose a change" />
+        <SectionTitle icon={IconSparkles} title="What-if: Propose a change" />
         <p className="text-xs text-slate-500 mb-4">Adjust an allocation and instantly preview the cascade impact across all mapped clients.</p>
 
         <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -243,7 +243,7 @@ const DetailPanel: React.FC<{
 /* ── Comparison Table ──────────────────────────── */
 const ComparisonTable: React.FC = () => (
   <Card className="fade-up">
-    <SectionTitle icon={<IconTrendUp size={16} />} title="Model Comparison" />
+    <SectionTitle icon={IconTrendUp} title="Model Comparison" />
     <div className="overflow-x-auto mt-3">
       <table className="w-full text-sm">
         <thead><tr className="text-left text-xs text-slate-400 border-b border-slate-100">

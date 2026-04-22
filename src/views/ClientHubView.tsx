@@ -4,6 +4,7 @@ import {
   IconSparkles, IconAlert, IconCalendar, IconClock, IconStar,
   IconTrendUp, IconTarget, IconSend, IconCheck, IconCheckCircle,
   IconPlus, IconLink, IconDownload, IconBriefcase, IconUsers,
+  IconShare, IconArrowUp, IconFilter,
   iconMap,
 } from '@/components/icons';
 import { Avatar, Badge, Button, Card, SectionTitle } from '@/components/ui';
@@ -17,7 +18,7 @@ interface ClientHubViewProps {
   openTemplate: (templateId: string, client?: Client | null, title?: string) => void;
 }
 
-type Tab = 'overview' | 'portfolio' | 'activity' | 'meetings' | 'actions';
+type Tab = 'overview' | 'portfolio' | 'activity' | 'meetings' | 'actions' | 'documents';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -25,6 +26,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'activity', label: 'Activity' },
   { id: 'meetings', label: 'Meetings' },
   { id: 'actions', label: 'Actions' },
+  { id: 'documents', label: 'Documents' },
 ];
 
 /* ── Inline mock data ─────────────────────────────────── */
@@ -75,6 +77,55 @@ const ALLOC_SEGMENTS = [
   { label: 'Cash', pct: 3.6, color: '#94A3B8' },
 ];
 
+/* ── Documents mock data ─────────────────────────────── */
+type DocCategory = 'All' | 'IPS' | 'Trust & Legal' | 'Tax' | 'Statements' | 'Proposals';
+type DocStatus = 'Current' | 'Archived' | 'Pending Review' | 'Draft';
+type DocFileType = 'PDF' | 'DOCX' | 'XLSX';
+
+interface MockDocument {
+  id: string;
+  name: string;
+  category: Exclude<DocCategory, 'All'>;
+  fileType: DocFileType;
+  uploadDate: string;
+  size: string;
+  status: DocStatus;
+}
+
+const DOC_CATEGORIES: DocCategory[] = ['All', 'IPS', 'Trust & Legal', 'Tax', 'Statements', 'Proposals'];
+
+const MOCK_DOCUMENTS: MockDocument[] = [
+  { id: 'd1', name: 'Investment Policy Statement — 2026', category: 'IPS', fileType: 'PDF', uploadDate: 'Apr 10, 2026', size: '1.2 MB', status: 'Current' },
+  { id: 'd2', name: 'Chen Family Trust Agreement', category: 'Trust & Legal', fileType: 'PDF', uploadDate: 'Mar 22, 2026', size: '3.8 MB', status: 'Current' },
+  { id: 'd3', name: 'Q1 2026 Performance Report', category: 'Statements', fileType: 'PDF', uploadDate: 'Apr 05, 2026', size: '2.4 MB', status: 'Current' },
+  { id: 'd4', name: 'Tax Projection Memo — FY2025', category: 'Tax', fileType: 'DOCX', uploadDate: 'Feb 18, 2026', size: '540 KB', status: 'Archived' },
+  { id: 'd5', name: 'Signed Proposal — Aggressive Growth', category: 'Proposals', fileType: 'PDF', uploadDate: 'Apr 15, 2026', size: '1.8 MB', status: 'Pending Review' },
+  { id: 'd6', name: 'Estate Planning Summary', category: 'Trust & Legal', fileType: 'DOCX', uploadDate: 'Jan 30, 2026', size: '920 KB', status: 'Current' },
+  { id: 'd7', name: 'Capital Gains Worksheet — 2025', category: 'Tax', fileType: 'XLSX', uploadDate: 'Mar 01, 2026', size: '310 KB', status: 'Current' },
+  { id: 'd8', name: 'Draft Proposal — Income Strategy', category: 'Proposals', fileType: 'DOCX', uploadDate: 'Apr 18, 2026', size: '680 KB', status: 'Draft' },
+];
+
+const DOC_STATUS_TONE: Record<DocStatus, 'success' | 'neutral' | 'warn' | 'muted'> = {
+  'Current': 'success',
+  'Archived': 'neutral',
+  'Pending Review': 'warn',
+  'Draft': 'muted',
+};
+
+const DOC_CATEGORY_TONE: Record<Exclude<DocCategory, 'All'>, 'brand' | 'purple' | 'warn' | 'neutral' | 'success'> = {
+  'IPS': 'brand',
+  'Trust & Legal': 'purple',
+  'Tax': 'warn',
+  'Statements': 'neutral',
+  'Proposals': 'success',
+};
+
+const FILE_TYPE_COLORS: Record<DocFileType, { bg: string; text: string; label: string }> = {
+  'PDF': { bg: 'bg-rose-50', text: 'text-rose-600', label: 'PDF' },
+  'DOCX': { bg: 'bg-brand-50', text: 'text-brand-600', label: 'DOC' },
+  'XLSX': { bg: 'bg-emerald-50', text: 'text-emerald-600', label: 'XLS' },
+};
+
 /* ── Helpers ──────────────────────────────────────────── */
 const daysSince = (dateStr: string): number => {
   const d = new Date(dateStr);
@@ -87,6 +138,7 @@ const ClientHubView: React.FC<ClientHubViewProps> = ({ clientId, onBack, openTem
   const [tab, setTab] = useState<Tab>('overview');
   const [copilotQ, setCopilotQ] = useState('');
   const [checkedActions, setCheckedActions] = useState<Set<string>>(new Set(['t5']));
+  const [docFilter, setDocFilter] = useState<DocCategory>('All');
 
   const client = CLIENTS.find(c => c.id === clientId);
 
@@ -455,6 +507,119 @@ const ClientHubView: React.FC<ClientHubViewProps> = ({ clientId, onBack, openTem
               })}
             </div>
           )}
+
+          {/* ══ DOCUMENTS TAB ══ */}
+          {tab === 'documents' && (() => {
+            const filteredDocs = docFilter === 'All'
+              ? MOCK_DOCUMENTS
+              : MOCK_DOCUMENTS.filter(d => d.category === docFilter);
+            const pendingCount = MOCK_DOCUMENTS.filter(d => d.status === 'Pending Review').length;
+            return (
+              <div className="space-y-5 fade-up">
+                {/* Summary stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="p-4 text-center">
+                    <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Total documents</div>
+                    <div className="text-2xl font-bold text-slate-900 mt-1">{MOCK_DOCUMENTS.length}</div>
+                  </Card>
+                  <Card className="p-4 text-center">
+                    <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Last uploaded</div>
+                    <div className="text-2xl font-bold text-slate-900 mt-1 text-sm">Apr 18, 2026</div>
+                  </Card>
+                  <Card className="p-4 text-center">
+                    <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Pending review</div>
+                    <div className="text-2xl font-bold text-amber-600 mt-1">{pendingCount}</div>
+                  </Card>
+                </div>
+
+                {/* Upload dropzone */}
+                <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-brand-400 hover:bg-brand-50/30 transition-colors">
+                  <IconArrowUp size={28} stroke="#94A3B8" className="mx-auto mb-2" />
+                  <p className="text-sm font-medium text-slate-700 mb-1">Drag and drop files here</p>
+                  <p className="text-xs text-slate-400 mb-3">PDF, DOCX, or XLSX up to 25 MB</p>
+                  <Button kind="primary" size="sm" icon={IconPlus}>Upload document</Button>
+                </div>
+
+                {/* Category filter pills */}
+                <div className="flex items-center gap-2">
+                  <IconFilter size={14} stroke="#94A3B8" className="shrink-0" />
+                  {DOC_CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setDocFilter(cat)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        docFilter === cat
+                          ? 'bg-brand-500 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Document list */}
+                <Card className="overflow-hidden">
+                  <table className="w-full text-[13px]">
+                    <thead>
+                      <tr className="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                        <th className="px-5 py-2.5 font-semibold">Type</th>
+                        <th className="py-2.5 font-semibold">Document</th>
+                        <th className="py-2.5 font-semibold">Category</th>
+                        <th className="py-2.5 font-semibold">Uploaded</th>
+                        <th className="py-2.5 font-semibold text-right">Size</th>
+                        <th className="py-2.5 font-semibold">Status</th>
+                        <th className="py-2.5 font-semibold text-right pr-5">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredDocs.map((doc, i) => {
+                        const ft = FILE_TYPE_COLORS[doc.fileType];
+                        return (
+                          <tr key={doc.id} className="border-b border-slate-50 hover:bg-slate-50/50 fade-up" style={{ animationDelay: `${i * 40}ms` }}>
+                            <td className="px-5 py-3">
+                              <span className={`inline-flex items-center justify-center w-9 h-9 rounded-lg text-[10px] font-bold ${ft.bg} ${ft.text}`}>
+                                {ft.label}
+                              </span>
+                            </td>
+                            <td className="py-3">
+                              <span className="font-medium text-slate-900">{doc.name}</span>
+                            </td>
+                            <td className="py-3">
+                              <Badge tone={DOC_CATEGORY_TONE[doc.category]}>{doc.category}</Badge>
+                            </td>
+                            <td className="py-3 text-slate-500 text-xs">{doc.uploadDate}</td>
+                            <td className="py-3 text-right text-slate-500 text-xs tabular-nums">{doc.size}</td>
+                            <td className="py-3">
+                              <Badge tone={DOC_STATUS_TONE[doc.status]}>{doc.status}</Badge>
+                            </td>
+                            <td className="py-3 pr-5">
+                              <div className="flex items-center justify-end gap-1">
+                                <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-brand-600 transition-colors" title="View">
+                                  <IconBrief size={14} />
+                                </button>
+                                <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-brand-600 transition-colors" title="Download">
+                                  <IconDownload size={14} />
+                                </button>
+                                <button className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-brand-600 transition-colors" title="Share">
+                                  <IconShare size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {filteredDocs.length === 0 && (
+                    <div className="p-8 text-center">
+                      <p className="text-sm text-slate-500">No documents found for this category.</p>
+                    </div>
+                  )}
+                </Card>
+              </div>
+            );
+          })()}
         </div>
 
         {/* RIGHT COLUMN (sidebar) */}

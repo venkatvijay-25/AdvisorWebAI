@@ -746,6 +746,18 @@ export const IconEdit = (props: IcoProps) => (
 );
 
 /**
+ * Icon: Household (family group)
+ */
+export const IconHousehold = (props: IcoProps) => (
+  <Ico {...props}>
+    <path d="M3 21v-7l9-7 9 7v7" />
+    <path d="M9 21v-4a3 3 0 016 0v4" />
+    <circle cx="8" cy="10" r="1.5" />
+    <circle cx="16" cy="10" r="1.5" />
+  </Ico>
+);
+
+/**
  * Icon map for string-based lookups
  * Allows data files to reference icons by string key
  */
@@ -822,4 +834,5 @@ export const iconMap: Record<string, React.ComponentType<IcoProps>> = {
   waveform: IconWaveform,
   mail: IconMail,
   edit: IconEdit,
+  household: IconHousehold,
 };

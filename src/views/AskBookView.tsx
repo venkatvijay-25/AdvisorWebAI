@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IconSearch, IconSparkles, IconDownload, IconRefresh } from '@/components/icons';
+import { IconSearch, IconSparkles, IconDownload, IconRefresh, IconBookmark, IconPin, IconCheck } from '@/components/icons';
 import { Badge, Button, Card, SectionTitle } from '@/components/ui';
 import { SAVED_QUERIES, runBookQuery } from '@/data/meetings';
 import type { BookQueryResult } from '@/types';
@@ -8,18 +8,51 @@ export const AskBookView: React.FC = () => {
   const [q, setQ] = useState('');
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<BookQueryResult | null>(null);
+  const [savedToast, setSavedToast] = useState(false);
+  const [pinned, setPinned] = useState(false);
 
   const run = (text: string) => {
     if (!text.trim()) return;
     setRunning(true);
     setResult(null);
+    setPinned(false);
+    setSavedToast(false);
     setTimeout(() => {
       setResult(runBookQuery(text));
       setRunning(false);
     }, 1200);
   };
 
-  const pinned = SAVED_QUERIES.filter(s => s.pinned);
+  const handleExportCsv = () => {
+    if (!result) return;
+    const header = result.cols.join(',');
+    const rows = result.rows.map(r =>
+      result.cols.map(c => {
+        const val = r[c] ?? Object.values(r)[result.cols.indexOf(c)] ?? '';
+        const str = String(val);
+        return str.includes(',') ? `"${str}"` : str;
+      }).join(',')
+    );
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'book-query-results.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSaveToClient = () => {
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2500);
+  };
+
+  const handleTogglePin = () => {
+    setPinned(prev => !prev);
+  };
+
+  const pinnedQueries = SAVED_QUERIES.filter(s => s.pinned);
   const other = SAVED_QUERIES.filter(s => !s.pinned);
 
   return (
@@ -52,11 +85,11 @@ export const AskBookView: React.FC = () => {
 
       {!result && !running && (
         <div className="space-y-4">
-          {pinned.length > 0 && (
+          {pinnedQueries.length > 0 && (
             <div>
               <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2">Pinned queries</div>
               <div className="flex flex-wrap gap-2">
-                {pinned.map(s => (
+                {pinnedQueries.map(s => (
                   <button key={s.id} onClick={() => { setQ(s.text); run(s.text); }} className="ripple px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 border border-brand-100 text-[12.5px] font-medium hover:bg-brand-100">
                     {s.text}
                   </button>
@@ -126,9 +159,26 @@ export const AskBookView: React.FC = () => {
               </table>
             </div>
             <div className="flex items-center gap-2 mt-4">
-              <Button kind="secondary" size="sm" icon={IconDownload}>Export CSV</Button>
-              <Button kind="ghost" size="sm" icon={IconRefresh} onClick={() => { setResult(null); setQ(''); }}>New question</Button>
+              <Button kind="secondary" size="sm" icon={IconDownload} onClick={handleExportCsv}>Export CSV</Button>
+              <Button kind="secondary" size="sm" icon={IconBookmark} onClick={handleSaveToClient}>Save to client</Button>
+              <Button
+                kind={pinned ? 'soft' : 'secondary'}
+                size="sm"
+                icon={pinned ? IconCheck : IconPin}
+                onClick={handleTogglePin}
+              >
+                {pinned ? 'Pinned' : 'Pin query'}
+              </Button>
+              <Button kind="ghost" size="sm" icon={IconRefresh} onClick={() => { setResult(null); setQ(''); setPinned(false); setSavedToast(false); }}>New question</Button>
             </div>
+
+            {/* Save-to-client toast */}
+            {savedToast && (
+              <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[13px] font-medium fade-up">
+                <IconCheck size={14} stroke="#059669" />
+                Saved to Sarah Chen's profile
+              </div>
+            )}
           </Card>
 
           <Card className="p-5">

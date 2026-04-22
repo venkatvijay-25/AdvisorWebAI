@@ -5,7 +5,9 @@ import HomeView from '@/views/HomeView';
 import MeetingsView from '@/views/MeetingsView';
 import { PulseView } from '@/views/PulseView';
 import { AskBookView } from '@/views/AskBookView';
-import { OnboardingView, PlaybooksView, CollaborationView, ExplainView } from '@/views/stubs';
+import OnboardingView from '@/views/OnboardingView';
+import { PlaybooksView, ExplainView } from '@/views/stubs';
+import { TeamView } from '@/views/TeamView';
 import { ClientsView } from '@/views/ClientsView';
 import { HistoryView } from '@/views/HistoryView';
 import { LibraryView } from '@/views/LibraryView';
@@ -18,7 +20,12 @@ import { ComplianceView } from '@/views/ComplianceView';
 import { BatchActionsView } from '@/views/BatchActionsView';
 import { CampaignsView } from '@/views/CampaignsView';
 import { ModelPortfolioView } from '@/views/ModelPortfolioView';
+import { HouseholdsView } from '@/views/HouseholdsView';
 import { AutoPilotView } from '@/views/AutoPilotView';
+import { TradeBlotterView } from '@/views/TradeBlotterView';
+import { GoalsView } from '@/views/GoalsView';
+import { PipelineView } from '@/views/PipelineView';
+import SettingsView from '@/views/SettingsView';
 import { CLIENTS } from '@/data/clients';
 import { TEMPLATES, HISTORY_ITEMS } from '@/data/templates';
 import { resolveFollowUp } from '@/data/intents';
@@ -27,8 +34,9 @@ import type { Client, HistoryItem, Template } from '@/types';
 type ViewId =
   | 'home' | 'meetings' | 'pulse' | 'askbook'
   | 'clients' | 'library' | 'insights' | 'history' | 'result'
-  | 'compliance' | 'onboarding' | 'playbooks' | 'collab' | 'explain'
-  | 'briefing' | 'clienthub' | 'batch' | 'campaigns' | 'models' | 'autopilot';
+  | 'compliance' | 'onboarding' | 'playbooks' | 'collab' | 'team' | 'explain'
+  | 'briefing' | 'clienthub' | 'batch' | 'campaigns' | 'models' | 'autopilot'
+  | 'households' | 'goals' | 'trades' | 'pipeline' | 'settings';
 
 // Placeholder stubs for views not yet migrated
 const PlaceholderView = ({ title }: { title: string }) => (
@@ -179,8 +187,16 @@ function App() {
         return <CampaignsView />;
       case 'models':
         return <ModelPortfolioView />;
+      case 'households':
+        return <HouseholdsView />;
       case 'autopilot':
         return <AutoPilotView />;
+      case 'trades':
+        return <TradeBlotterView />;
+      case 'goals':
+        return <GoalsView />;
+      case 'pipeline':
+        return <PipelineView />;
       case 'compliance':
         return <ComplianceView />;
       case 'onboarding':
@@ -188,9 +204,12 @@ function App() {
       case 'playbooks':
         return <PlaybooksView />;
       case 'collab':
-        return <CollaborationView />;
+      case 'team':
+        return <TeamView />;
       case 'explain':
         return <ExplainView />;
+      case 'settings':
+        return <SettingsView />;
       default:
         return <PlaceholderView title="Unknown View" />;
     }
@@ -209,7 +228,7 @@ function App() {
         onOpenPalette={() => setPalette(true)}
       />
       <main className="flex-1 flex flex-col min-w-0">
-        <TopBar onOpenPalette={() => setPalette(true)} />
+        <TopBar onOpenPalette={() => setPalette(true)} onOpenSettings={() => { setView('settings'); setChatId(null); }} />
         <div className="flex-1 overflow-hidden bg-slate-50 flex">
           <ErrorBoundary key={view}>
             <div className="flex-1 overflow-y-auto scroll-thin">

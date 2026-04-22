@@ -291,6 +291,29 @@ export interface ModelPortfolio {
 }
 
 /** Campaign for outbound communications */
+export interface CampaignLinkClick {
+  label: string;
+  pct: number;
+}
+
+export interface CampaignReplySentiment {
+  positive: number;
+  neutral: number;
+  negative: number;
+}
+
+export interface CampaignABVariant {
+  subject: string;
+  openRate: number;
+  ctr: number;
+}
+
+export interface CampaignABTest {
+  variantA: CampaignABVariant;
+  variantB: CampaignABVariant;
+  winner: 'A' | 'B';
+}
+
 export interface Campaign {
   id: string;
   name: string;
@@ -302,6 +325,13 @@ export interface Campaign {
   scheduledFor?: string;
   sentAt?: string;
   openRate?: number;
+  clickRate?: number;
+  replyCount?: number;
+  replySentiment?: CampaignReplySentiment;
+  unsubscribes?: number;
+  linkClicks?: CampaignLinkClick[];
+  abTest?: CampaignABTest;
+  engagementTimeline?: string;
   personalized: boolean;
 }
 
