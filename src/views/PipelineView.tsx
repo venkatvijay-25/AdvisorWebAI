@@ -1,15 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   IconPlus,
   IconClock,
   IconTarget,
   IconChevronRight,
+  IconChevronLeft,
   IconX,
   IconMail,
   IconCalendar,
   IconSparkles,
   IconLightbulb,
   IconBrief,
+  IconCheck,
+  IconCheckCircle,
+  IconSend,
 } from '@/components/icons';
 import { Avatar, Badge, Button, Card, KPI } from '@/components/ui';
 
@@ -286,10 +290,57 @@ const ProspectCard: React.FC<{ prospect: Prospect; onClick: () => void }> = ({ p
 );
 
 /* ------------------------------------------------------------------ */
+/*  Stage navigation helpers                                           */
+/* ------------------------------------------------------------------ */
+const ACTIVE_STAGES: Stage[] = ['new-lead', 'qualified', 'proposal-sent', 'negotiating', 'won'];
+
+const nextStage = (current: Stage): Stage | null => {
+  const idx = ACTIVE_STAGES.indexOf(current);
+  if (idx === -1 || idx >= ACTIVE_STAGES.length - 1) return null;
+  return ACTIVE_STAGES[idx + 1];
+};
+
+const prevStage = (current: Stage): Stage | null => {
+  const idx = ACTIVE_STAGES.indexOf(current);
+  if (idx <= 0) return null;
+  return ACTIVE_STAGES[idx - 1];
+};
+
+/* ------------------------------------------------------------------ */
 /*  Prospect Detail Panel                                              */
 /* ------------------------------------------------------------------ */
-const ProspectDetail: React.FC<{ prospect: Prospect; onClose: () => void }> = ({ prospect, onClose }) => {
+interface ProspectDetailProps {
+  prospect: Prospect;
+  onClose: () => void;
+  onMoveStage: (prospectId: string, newStage: Stage) => void;
+  onLogContact: (prospectId: string, note: string) => void;
+  onConvertToClient: (prospectId: string) => void;
+}
+
+const ProspectDetail: React.FC<ProspectDetailProps> = ({ prospect, onClose, onMoveStage, onLogContact, onConvertToClient }) => {
   const stage = STAGES.find(s => s.id === prospect.stage)!;
+  const stageIdx = ACTIVE_STAGES.indexOf(prospect.stage);
+  const canGoNext = nextStage(prospect.stage) !== null;
+  const canGoBack = prevStage(prospect.stage) !== null;
+  const isWon = prospect.stage === 'won';
+  const isLost = prospect.stage === 'lost';
+
+  const [contactNote, setContactNote] = useState('');
+  const [showContactInput, setShowContactInput] = useState(false);
+  const [converted, setConverted] = useState(false);
+
+  const handleLogContact = () => {
+    if (contactNote.trim()) {
+      onLogContact(prospect.id, contactNote.trim());
+      setContactNote('');
+      setShowContactInput(false);
+    }
+  };
+
+  const handleConvert = () => {
+    onConvertToClient(prospect.id);
+    setConverted(true);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
@@ -318,6 +369,109 @@ const ProspectDetail: React.FC<{ prospect: Prospect; onClose: () => void }> = ({
         </div>
 
         <div className="px-6 py-5 space-y-6">
+          {/* Stage Indicator */}
+          {!isLost && (
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Pipeline Stage</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { const ps = prevStage(prospect.stage); if (ps) onMoveStage(prospect.id, ps); }}
+                  disabled={!canGoBack}
+                  className={`p-1.5 rounded-lg transition ${canGoBack ? 'hover:bg-slate-100 text-slate-600' : 'text-slate-200 cursor-not-allowed'}`}
+                  title="Move to previous stage"
+                >
+                  <IconChevronLeft size={18} />
+                </button>
+                <div className="flex-1 flex items-center gap-1">
+                  {ACTIVE_STAGES.map((s, i) => {
+                    const stg = STAGES.find(st => st.id === s)!;
+                    const isCurrent = s === prospect.stage;
+                    const isPast = i < stageIdx;
+                    return (
+                      <div key={s} className="flex-1 flex flex-col items-center gap-1">
+                        <div
+                          className={`h-2 w-full rounded-full transition-colors ${
+                            isCurrent ? 'bg-brand-500' : isPast ? 'bg-brand-200' : 'bg-slate-200'
+                          }`}
+                        />
+                        <span className={`text-[10px] font-medium ${isCurrent ? 'text-brand-700' : 'text-slate-400'}`}>
+                          {stg.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => { const ns = nextStage(prospect.stage); if (ns) onMoveStage(prospect.id, ns); }}
+                  disabled={!canGoNext}
+                  className={`p-1.5 rounded-lg transition ${canGoNext ? 'hover:bg-slate-100 text-slate-600' : 'text-slate-200 cursor-not-allowed'}`}
+                  title="Move to next stage"
+                >
+                  <IconChevronRight size={18} />
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* Action Buttons */}
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Actions</h3>
+            <div className="flex flex-wrap gap-2">
+              {!isLost && !isWon && canGoNext && (
+                <Button
+                  kind="primary"
+                  size="sm"
+                  icon={IconChevronRight}
+                  onClick={() => { const ns = nextStage(prospect.stage); if (ns) onMoveStage(prospect.id, ns); }}
+                >
+                  Move to {STAGES.find(s => s.id === nextStage(prospect.stage))?.label}
+                </Button>
+              )}
+              <Button
+                kind="secondary"
+                size="sm"
+                icon={IconSend}
+                onClick={() => setShowContactInput(!showContactInput)}
+              >
+                Log Contact
+              </Button>
+              {isWon && !converted && (
+                <Button
+                  kind="primary"
+                  size="sm"
+                  icon={IconCheckCircle}
+                  onClick={handleConvert}
+                >
+                  Convert to Client
+                </Button>
+              )}
+              {isWon && converted && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200">
+                  <IconCheckCircle size={16} stroke="#059669" />
+                  <span className="text-sm font-medium text-emerald-700">Converted to client successfully</span>
+                </div>
+              )}
+            </div>
+
+            {/* Contact note input */}
+            {showContactInput && (
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="text"
+                  value={contactNote}
+                  onChange={e => setContactNote(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleLogContact(); }}
+                  placeholder="Enter contact note..."
+                  className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 font-[Inter,sans-serif]"
+                  autoFocus
+                />
+                <Button kind="primary" size="sm" onClick={handleLogContact} icon={IconCheck}>
+                  Save
+                </Button>
+              </div>
+            )}
+          </section>
+
           {/* Contact Info */}
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Contact Information</h3>
@@ -499,22 +653,53 @@ const ListTable: React.FC<{ prospects: Prospect[]; onSelect: (p: Prospect) => vo
 /* ================================================================== */
 export const PipelineView: React.FC = () => {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
-  const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
+  const [prospects, setProspects] = useState<Prospect[]>(() => [...PROSPECTS]);
+  const [selectedProspectId, setSelectedProspectId] = useState<string | null>(null);
+
+  const selectedProspect = selectedProspectId ? prospects.find(p => p.id === selectedProspectId) || null : null;
+
+  /* Stage move handler */
+  const handleMoveStage = useCallback((prospectId: string, newStage: Stage) => {
+    setProspects(prev => prev.map(p =>
+      p.id === prospectId ? { ...p, stage: newStage, daysInStage: 0 } : p
+    ));
+  }, []);
+
+  /* Log contact handler */
+  const handleLogContact = useCallback((prospectId: string, note: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const newActivity: Activity = {
+      id: 'a' + Date.now(),
+      date: today,
+      type: 'note',
+      summary: note,
+    };
+    setProspects(prev => prev.map(p =>
+      p.id === prospectId ? { ...p, activities: [...p.activities, newActivity] } : p
+    ));
+  }, []);
+
+  /* Convert to client handler */
+  const handleConvertToClient = useCallback((prospectId: string) => {
+    setProspects(prev => prev.map(p =>
+      p.id === prospectId ? { ...p, stage: 'won' as Stage, daysInStage: 0 } : p
+    ));
+  }, []);
 
   /* KPI computations */
-  const active = PROSPECTS.filter(p => p.stage !== 'won' && p.stage !== 'lost');
+  const active = prospects.filter(p => p.stage !== 'won' && p.stage !== 'lost');
   const totalPipelineAUM = active.reduce((s, p) => s + p.estimatedAUM, 0);
   const avgDays = Math.round(active.reduce((s, p) => s + p.daysInStage, 0) / (active.length || 1));
-  const wonCount = PROSPECTS.filter(p => p.stage === 'won').length;
-  const closedCount = PROSPECTS.filter(p => p.stage === 'won' || p.stage === 'lost').length;
+  const wonCount = prospects.filter(p => p.stage === 'won').length;
+  const closedCount = prospects.filter(p => p.stage === 'won' || p.stage === 'lost').length;
   const conversionRate = closedCount > 0 ? Math.round((wonCount / closedCount) * 100) : 0;
 
   /* Group by stage */
   const byStage = useMemo(() => {
     const map: Record<Stage, Prospect[]> = { 'new-lead': [], qualified: [], 'proposal-sent': [], negotiating: [], won: [], lost: [] };
-    PROSPECTS.forEach(p => map[p.stage].push(p));
+    prospects.forEach(p => map[p.stage].push(p));
     return map;
-  }, []);
+  }, [prospects]);
 
   return (
     <div className="max-w-[1400px] mx-auto px-6 py-6">
@@ -598,7 +783,7 @@ export const PipelineView: React.FC = () => {
                 {/* Cards */}
                 <div className={`space-y-0 ${isLost ? 'opacity-60' : ''}`}>
                   {prospects.map(p => (
-                    <ProspectCard key={p.id} prospect={p} onClick={() => setSelectedProspect(p)} />
+                    <ProspectCard key={p.id} prospect={p} onClick={() => setSelectedProspectId(p.id)} />
                   ))}
                   {prospects.length === 0 && (
                     <div className="text-center py-6 text-xs text-slate-400">
@@ -614,12 +799,18 @@ export const PipelineView: React.FC = () => {
 
       {/* List View */}
       {viewMode === 'list' && (
-        <ListTable prospects={PROSPECTS} onSelect={setSelectedProspect} />
+        <ListTable prospects={prospects} onSelect={p => setSelectedProspectId(p.id)} />
       )}
 
       {/* Detail Panel */}
       {selectedProspect && (
-        <ProspectDetail prospect={selectedProspect} onClose={() => setSelectedProspect(null)} />
+        <ProspectDetail
+          prospect={selectedProspect}
+          onClose={() => setSelectedProspectId(null)}
+          onMoveStage={handleMoveStage}
+          onLogContact={handleLogContact}
+          onConvertToClient={handleConvertToClient}
+        />
       )}
     </div>
   );

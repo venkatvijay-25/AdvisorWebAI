@@ -25,6 +25,7 @@ import {
   IconLayers,
   IconWand,
   IconShield,
+  IconX,
 } from '@/components/icons';
 import { Avatar, Badge, Button, Card, SectionTitle } from '@/components/ui';
 import { MEETINGS, LIVE_TRANSCRIPT } from '@/data/meetings';
@@ -361,13 +362,155 @@ interface CaptureTabProps {
 }
 
 const CaptureTab: React.FC<CaptureTabProps> = ({ m }) => {
+  const [manualNotes, setManualNotes] = useState('');
+  const [manualDecisions, setManualDecisions] = useState<string[]>([]);
+  const [manualActions, setManualActions] = useState<string[]>([]);
+  const [manualObjections, setManualObjections] = useState<string[]>([]);
+  const [manualLifeEvents, setManualLifeEvents] = useState<string[]>([]);
+
+  const addEntry = (
+    setter: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    setter((prev) => [...prev, '']);
+  };
+
+  const updateEntry = (
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+    index: number,
+    value: string
+  ) => {
+    setter((prev) => prev.map((item, i) => (i === index ? value : item)));
+  };
+
+  const editableInputClass =
+    'w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 font-[Inter,sans-serif]';
+
   if (!m.capture) {
     return (
-      <div className="text-center py-10 text-slate-500 text-sm">
-        <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-          <IconWaveform size={20} stroke="#94A3B8" />
+      <div className="space-y-5">
+        {/* Manual notes area */}
+        <Card className="p-5">
+          <SectionTitle icon={IconEdit} title="Meeting notes" />
+          <textarea
+            value={manualNotes}
+            onChange={(e) => setManualNotes(e.target.value)}
+            placeholder="Add meeting notes, decisions, or action items..."
+            rows={5}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[13.5px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 resize-none font-[Inter,sans-serif]"
+          />
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Button kind="soft" size="sm" onClick={() => addEntry(setManualDecisions)}>
+              <IconCheck2 size={13} />
+              Add Decision
+            </Button>
+            <Button kind="soft" size="sm" onClick={() => addEntry(setManualActions)}>
+              <IconTasks size={13} />
+              Add Action Item
+            </Button>
+            <Button kind="soft" size="sm" onClick={() => addEntry(setManualObjections)}>
+              <IconAlert size={13} />
+              Add Objection
+            </Button>
+            <Button kind="soft" size="sm" onClick={() => addEntry(setManualLifeEvents)}>
+              <IconUsers size={13} />
+              Add Life Event
+            </Button>
+          </div>
+        </Card>
+
+        {/* Manual decisions */}
+        {manualDecisions.length > 0 && (
+          <Card className="p-5">
+            <SectionTitle icon={IconCheck2} title="Decisions" />
+            <div className="space-y-2">
+              {manualDecisions.map((d, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="mt-[10px] h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <input
+                    type="text"
+                    value={d}
+                    onChange={(e) => updateEntry(setManualDecisions, i, e.target.value)}
+                    placeholder="Describe the decision..."
+                    className={editableInputClass}
+                    autoFocus
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Manual action items */}
+        {manualActions.length > 0 && (
+          <Card className="p-5">
+            <SectionTitle icon={IconTasks} title="Action items" />
+            <div className="space-y-2">
+              {manualActions.map((a, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="mt-[10px] h-1.5 w-1.5 rounded-full bg-brand-500 shrink-0" />
+                  <input
+                    type="text"
+                    value={a}
+                    onChange={(e) => updateEntry(setManualActions, i, e.target.value)}
+                    placeholder="Describe the action item..."
+                    className={editableInputClass}
+                    autoFocus
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Manual objections */}
+        {manualObjections.length > 0 && (
+          <Card className="p-5">
+            <SectionTitle icon={IconAlert} title="Objections & concerns" />
+            <div className="space-y-2">
+              {manualObjections.map((o, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="mt-[10px] h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                  <input
+                    type="text"
+                    value={o}
+                    onChange={(e) => updateEntry(setManualObjections, i, e.target.value)}
+                    placeholder="Describe the objection or concern..."
+                    className={editableInputClass}
+                    autoFocus
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Manual life events */}
+        {manualLifeEvents.length > 0 && (
+          <Card className="p-5">
+            <SectionTitle icon={IconUsers} title="Life events" />
+            <div className="space-y-2">
+              {manualLifeEvents.map((e, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="mt-[10px] h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0" />
+                  <input
+                    type="text"
+                    value={e}
+                    onChange={(ev) => updateEntry(setManualLifeEvents, i, ev.target.value)}
+                    placeholder="Describe the life event..."
+                    className={editableInputClass}
+                    autoFocus
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Secondary auto-capture message */}
+        <div className="flex items-center gap-2 justify-center text-[12px] text-slate-400 pt-2">
+          <IconWaveform size={14} stroke="#CBD5E1" />
+          <span>Capture is also populated automatically after the meeting ends.</span>
         </div>
-        Capture is populated automatically after the meeting ends.
       </div>
     );
   }
@@ -705,10 +848,224 @@ const MeetingDetail: React.FC<MeetingDetailProps> = ({ m, onBack }) => {
 };
 
 /* ================================================================================
+   ScheduleMeetingModal
+   ================================================================================ */
+interface ScheduleMeetingModalProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+const CLIENT_NAMES = ['Sarah Chen', 'Marcus Reid', 'Lin Zhao', 'David Goldberg', 'Anika Patel'];
+
+const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({ open, onClose }) => {
+  const [client, setClient] = useState('');
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [duration, setDuration] = useState('30 min');
+  const [channel, setChannel] = useState('Video');
+  const [attendees, setAttendees] = useState('');
+  const [notes, setNotes] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  if (!open) return null;
+
+  const handleSubmit = () => {
+    setSuccess(true);
+    setTimeout(() => {
+      setSuccess(false);
+      setClient('');
+      setTitle('');
+      setDate('');
+      setTime('');
+      setDuration('30 min');
+      setChannel('Video');
+      setAttendees('');
+      setNotes('');
+      onClose();
+    }, 1500);
+  };
+
+  const handleCancel = () => {
+    setClient('');
+    setTitle('');
+    setDate('');
+    setTime('');
+    setDuration('30 min');
+    setChannel('Video');
+    setAttendees('');
+    setNotes('');
+    onClose();
+  };
+
+  const labelClass = 'block text-[13px] font-medium text-slate-700 mb-1';
+  const inputClass =
+    'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13.5px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 font-[Inter,sans-serif]';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={handleCancel} />
+      <div className="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-brand-50 flex items-center justify-center">
+              <IconCalendar size={16} stroke="#1B8AD8" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900">Schedule meeting</h2>
+          </div>
+          <button
+            onClick={handleCancel}
+            className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition"
+          >
+            <IconX size={16} stroke="#64748B" />
+          </button>
+        </div>
+
+        {success ? (
+          <div className="flex flex-col items-center justify-center py-16 px-6">
+            <div className="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
+              <IconCheck2 size={24} stroke="#059669" strokeWidth={2} />
+            </div>
+            <div className="text-lg font-semibold text-slate-900 mb-1">Meeting scheduled</div>
+            <div className="text-sm text-slate-500">
+              Copilot will generate a prep brief 30 minutes before the meeting.
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto scroll-thin">
+              {/* Client selector */}
+              <div>
+                <label className={labelClass}>Client</label>
+                <select
+                  value={client}
+                  onChange={(e) => setClient(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select a client...</option>
+                  {CLIENT_NAMES.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className={labelClass}>Meeting title</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Q2 Portfolio Review"
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Date & Time row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Date</label>
+                  <input
+                    type="text"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    placeholder="e.g. 2026-05-01"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Time</label>
+                  <input
+                    type="text"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    placeholder="e.g. 2:30 PM"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              {/* Duration & Channel row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Duration</label>
+                  <select
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="15 min">15 min</option>
+                    <option value="30 min">30 min</option>
+                    <option value="45 min">45 min</option>
+                    <option value="1 hr">1 hr</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Channel</label>
+                  <select
+                    value={channel}
+                    onChange={(e) => setChannel(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="Video">Video</option>
+                    <option value="In-person">In-person</option>
+                    <option value="Phone">Phone</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Attendees */}
+              <div>
+                <label className={labelClass}>Attendees</label>
+                <input
+                  type="text"
+                  value={attendees}
+                  onChange={(e) => setAttendees(e.target.value)}
+                  placeholder="e.g. Vijay Venkat, Sarah Chen, Ana Silva"
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Notes / Agenda */}
+              <div>
+                <label className={labelClass}>Notes / Agenda</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add agenda items, topics to discuss, or preparation notes..."
+                  rows={3}
+                  className={`${inputClass} resize-none`}
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/40">
+              <Button kind="ghost" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button kind="primary" onClick={handleSubmit}>
+                <IconCalendar size={14} />
+                Schedule
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ================================================================================
    MeetingsView
    ================================================================================ */
 const MeetingsView: React.FC = () => {
   const [open, setOpen] = useState<(typeof MEETINGS)[0] | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   if (open) return <MeetingDetail m={open} onBack={() => setOpen(null)} />;
 
@@ -717,6 +1074,7 @@ const MeetingsView: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-8 py-8">
+      <ScheduleMeetingModal open={showScheduleModal} onClose={() => setShowScheduleModal(false)} />
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-2">
@@ -727,7 +1085,7 @@ const MeetingsView: React.FC = () => {
             Prep, capture, and follow through — automatically.
           </p>
         </div>
-        <Button kind="primary">
+        <Button kind="primary" onClick={() => setShowScheduleModal(true)}>
           <IconPlus size={14} />
           Schedule meeting
         </Button>

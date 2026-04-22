@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { IconSparkles, IconPlus, IconEdit, IconCopy, IconX, IconCheck } from '@/components/icons';
+import React, { useState, useMemo } from 'react';
+import { IconSparkles, IconPlus, IconEdit, IconCopy, IconX, IconCheck, IconSearch } from '@/components/icons';
 import { iconMap } from '@/components/icons';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, Badge } from '@/components/ui';
 import { TEMPLATES } from '@/data/templates';
 import type { Template } from '@/types';
 
@@ -18,6 +18,78 @@ const COLOR_PRESETS = [
   { label: 'Orange', value: '#F97316' },
   { label: 'Emerald', value: '#10B981' },
   { label: 'Pink', value: '#EC4899' },
+];
+
+/* ── Categories ── */
+type CategoryKey = 'All' | 'Portfolio' | 'Risk' | 'Tax' | 'Client' | 'Compliance' | 'Market' | 'Custom';
+
+const CATEGORIES: CategoryKey[] = ['All', 'Portfolio', 'Risk', 'Tax', 'Client', 'Compliance', 'Market', 'Custom'];
+
+const TEMPLATE_CATEGORIES: Record<string, CategoryKey> = {
+  review: 'Portfolio',
+  rebalance: 'Portfolio',
+  risk: 'Risk',
+  news: 'Market',
+  tax: 'Tax',
+  proposal: 'Client',
+};
+
+/* ── Additional built-in templates ── */
+const EXTRA_TEMPLATES: (Template & { category: CategoryKey })[] = [
+  {
+    id: 'compliance-pretrade',
+    icon: 'shield',
+    title: 'Compliance pre-trade check',
+    hint: 'Verify regulatory constraints, restricted lists, and concentration limits before executing trades',
+    accent: '#F97316',
+    sample: 'Run a pre-trade compliance check on the proposed Goldberg rebalance trades',
+    category: 'Compliance',
+  },
+  {
+    id: 'fee-schedule',
+    icon: 'receipt',
+    title: 'Fee schedule review',
+    hint: 'Analyze fee structures across accounts, compare to benchmarks, and identify optimization opportunities',
+    accent: '#7B5BFF',
+    sample: 'Review fee schedules for all UHNI clients and flag any above 1.2% blended',
+    category: 'Portfolio',
+  },
+  {
+    id: 'estate-planning',
+    icon: 'briefcase',
+    title: 'Estate planning summary',
+    hint: 'Compile estate plan overview including trusts, beneficiaries, and succession strategy',
+    accent: '#0EA5E9',
+    sample: 'Summarize the Goldberg estate plan and flag any documents expiring this year',
+    category: 'Client',
+  },
+  {
+    id: 'sector-rotation',
+    icon: 'compass',
+    title: 'Sector rotation analysis',
+    hint: 'Analyze sector momentum, relative strength, and rotation signals across portfolios',
+    accent: '#10B981',
+    sample: 'Show sector rotation trends for Q2 and which client portfolios need adjustment',
+    category: 'Market',
+  },
+  {
+    id: 'client-onboarding',
+    icon: 'tasks',
+    title: 'Client onboarding checklist',
+    hint: 'Generate a comprehensive onboarding checklist with KYC, account setup, and welcome materials',
+    accent: '#EC4899',
+    sample: 'Create an onboarding checklist for new prospect Aarav Singh with $3M in assets',
+    category: 'Client',
+  },
+  {
+    id: 'yearend-tax',
+    icon: 'calendar',
+    title: 'Year-end tax planning',
+    hint: 'Comprehensive year-end tax strategy including harvesting, Roth conversions, and charitable giving',
+    accent: '#F59E0B',
+    sample: 'Build a year-end tax plan for the Chen household with estimated savings',
+    category: 'Tax',
+  },
 ];
 
 /* ── Custom template type (extends Template with description) ── */
@@ -53,6 +125,39 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ openTemplate }) => {
   const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
   const [modal, setModal] = useState<ModalState>(emptyModal);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<CategoryKey>('All');
+
+  /* ── All default templates (original + extras) ── */
+  const allDefaultTemplates = useMemo(() => {
+    const origWithCat = TEMPLATES.map(t => ({
+      ...t,
+      category: (TEMPLATE_CATEGORIES[t.id] || 'Portfolio') as CategoryKey,
+    }));
+    return [...origWithCat, ...EXTRA_TEMPLATES];
+  }, []);
+
+  /* ── Filtering logic ── */
+  const filteredDefaults = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return allDefaultTemplates.filter(t => {
+      const matchesCategory = activeCategory === 'All' || t.category === activeCategory;
+      const matchesSearch = !q || t.title.toLowerCase().includes(q) || t.hint.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [allDefaultTemplates, searchQuery, activeCategory]);
+
+  const filteredCustom = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return customTemplates.filter(t => {
+      const matchesCategory = activeCategory === 'All' || activeCategory === 'Custom';
+      const matchesSearch = !q || t.title.toLowerCase().includes(q) || t.hint.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [customTemplates, searchQuery, activeCategory]);
+
+  const totalCount = allDefaultTemplates.length + customTemplates.length;
+  const shownCount = filteredDefaults.length + filteredCustom.length;
 
   /* ── Modal handlers ── */
   const openCreateModal = () => {
@@ -195,23 +300,86 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ openTemplate }) => {
         </Button>
       </div>
 
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+          <IconSearch size={16} />
+        </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search templates by name or description..."
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#2FA4F9] focus:ring-2 focus:ring-brand-100 bg-white"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+          >
+            <IconX size={14} />
+          </button>
+        )}
+      </div>
+
+      {/* Category filter pills */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
+              activeCategory === cat
+                ? 'bg-[#2FA4F9] text-white shadow-sm'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Match count */}
+      <div className="text-xs text-slate-400 mb-4 font-medium">
+        Showing {shownCount} of {totalCount} templates
+      </div>
+
+      {/* Empty state */}
+      {shownCount === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <IconSearch size={36} stroke="#CBD5E1" />
+          <p className="text-sm mt-3 font-medium text-slate-500">No templates match your search</p>
+          <p className="text-xs mt-1 text-slate-400">Try a different keyword or category.</p>
+          <button
+            onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}
+            className="mt-4 text-xs font-medium text-[#2FA4F9] hover:underline"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
       {/* My Templates section */}
-      {customTemplates.length > 0 && (
+      {filteredCustom.length > 0 && (
         <div className="mb-8">
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-3">My Templates</div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {customTemplates.map(tpl => renderCard(tpl, true))}
+            {filteredCustom.map(tpl => renderCard(tpl, true))}
           </div>
         </div>
       )}
 
       {/* Default templates */}
-      {customTemplates.length > 0 && (
-        <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-3">Default Templates</div>
+      {filteredDefaults.length > 0 && (
+        <>
+          {filteredCustom.length > 0 && (
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-3">Default Templates</div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredDefaults.map(tpl => renderCard(tpl, false))}
+          </div>
+        </>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {TEMPLATES.map(tpl => renderCard(tpl, false))}
-      </div>
 
       {/* ── Create / Edit Modal ── */}
       {modal.open && (

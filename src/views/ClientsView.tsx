@@ -12,9 +12,10 @@ type ViewMode = 'table' | 'card';
 interface ClientsViewProps {
   openTemplate: (id: string, client?: Client | null, title?: string) => void;
   openClientHub?: (clientId: string) => void;
+  setView?: (view: string) => void;
 }
 
-export const ClientsView: React.FC<ClientsViewProps> = ({ openTemplate, openClientHub }) => {
+export const ClientsView: React.FC<ClientsViewProps> = ({ openTemplate, openClientHub, setView }) => {
   const [filter, setFilter] = useState('all');
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -107,7 +108,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ openTemplate, openClie
         <div className="flex items-center gap-2">
           <Button kind="secondary" icon={IconDownload} size="sm" onClick={handleExport}>Export</Button>
           <Button kind="secondary" icon={IconFilter} size="sm">Filters</Button>
-          <Button kind="primary" icon={IconPlus} size="sm">Add client</Button>
+          <Button kind="primary" icon={IconPlus} size="sm" onClick={() => setView?.('onboarding')}>Add client</Button>
         </div>
       </div>
 

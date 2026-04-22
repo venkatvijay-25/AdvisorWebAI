@@ -722,24 +722,261 @@ const DetailItem: React.FC<{ label: string; value?: string; children?: React.Rea
 /*  Main view                                                          */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/*  New Order Modal                                                    */
+/* ------------------------------------------------------------------ */
+
+interface NewOrderForm {
+  clientName: string;
+  action: OrderAction;
+  ticker: string;
+  securityName: string;
+  quantity: string;
+  orderType: OrderType;
+  limitPrice: string;
+  notes: string;
+}
+
+const EMPTY_FORM: NewOrderForm = {
+  clientName: '',
+  action: 'BUY',
+  ticker: '',
+  securityName: '',
+  quantity: '',
+  orderType: 'Market',
+  limitPrice: '',
+  notes: '',
+};
+
+const NewOrderModal: React.FC<{ onSubmit: (order: Order) => void; onClose: () => void }> = ({ onSubmit, onClose }) => {
+  const [form, setForm] = useState<NewOrderForm>(EMPTY_FORM);
+
+  const set = <K extends keyof NewOrderForm>(key: K, value: NewOrderForm[K]) =>
+    setForm(prev => ({ ...prev, [key]: value }));
+
+  const showLimitPrice = form.orderType === 'Limit' || form.orderType === 'Stop';
+
+  const clientInfo = MOCK_ORDERS.find(o => o.clientName === form.clientName);
+
+  const handleSubmit = () => {
+    if (!form.clientName || !form.ticker || !form.quantity) return;
+    const qty = parseInt(form.quantity, 10);
+    if (isNaN(qty) || qty <= 0) return;
+
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    const orderId = `ORD-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 900) + 100)}`;
+
+    const newOrder: Order = {
+      id: orderId,
+      timestamp: ts,
+      clientId: clientInfo?.clientId || form.clientName.toLowerCase().replace(/\s/g, ''),
+      clientName: form.clientName,
+      clientInitials: clientInfo?.clientInitials || form.clientName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2),
+      clientColor: clientInfo?.clientColor || '#2FA4F9',
+      action: form.action,
+      ticker: form.ticker.toUpperCase(),
+      securityName: form.securityName || form.ticker.toUpperCase(),
+      quantity: qty,
+      estimatedValue: qty * (showLimitPrice && form.limitPrice ? parseFloat(form.limitPrice) : 100),
+      orderType: form.orderType,
+      status: 'Pending Approval',
+      source: 'Manual',
+      compliancePass: true,
+      ...(form.orderType === 'Limit' && form.limitPrice ? { limitPrice: parseFloat(form.limitPrice) } : {}),
+      ...(form.orderType === 'Stop' && form.limitPrice ? { stopPrice: parseFloat(form.limitPrice) } : {}),
+      timeline: [
+        { label: 'Submitted', time: ts.split(' ')[1], done: true },
+        { label: 'Compliance Check', time: '\u2014', done: false },
+        { label: 'Approved', time: '\u2014', done: false },
+        { label: 'Sent to OMS', time: '\u2014', done: false },
+        { label: 'Filled', time: '\u2014', done: false },
+      ],
+      auditTrail: [
+        { time: ts.split(' ')[1], action: 'Order manually submitted by advisor', by: 'Vijay Venkat' },
+      ],
+    };
+
+    onSubmit(newOrder);
+  };
+
+  const inputClass = 'w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 font-[Inter,sans-serif]';
+  const labelClass = 'block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto scroll-thin" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-900">New Order</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition">
+            <IconX size={18} stroke="#64748B" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <div className="px-6 py-5 space-y-4">
+          {/* Client selector */}
+          <div>
+            <label className={labelClass}>Client</label>
+            <select value={form.clientName} onChange={e => set('clientName', e.target.value)} className={inputClass}>
+              <option value="">Select client...</option>
+              {CLIENT_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+
+          {/* Action toggle */}
+          <div>
+            <label className={labelClass}>Action</label>
+            <div className="flex rounded-lg border border-slate-200 overflow-hidden w-fit">
+              <button
+                onClick={() => set('action', 'BUY')}
+                className={`px-5 py-2 text-sm font-semibold transition ${
+                  form.action === 'BUY'
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-white text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                BUY
+              </button>
+              <button
+                onClick={() => set('action', 'SELL')}
+                className={`px-5 py-2 text-sm font-semibold transition ${
+                  form.action === 'SELL'
+                    ? 'bg-rose-500 text-white'
+                    : 'bg-white text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                SELL
+              </button>
+            </div>
+          </div>
+
+          {/* Ticker + Security name */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>Ticker</label>
+              <input
+                type="text"
+                value={form.ticker}
+                onChange={e => set('ticker', e.target.value.toUpperCase())}
+                placeholder="e.g. AAPL"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Security Name</label>
+              <input
+                type="text"
+                value={form.securityName}
+                onChange={e => set('securityName', e.target.value)}
+                placeholder="e.g. Apple Inc"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* Quantity */}
+          <div>
+            <label className={labelClass}>Quantity</label>
+            <input
+              type="number"
+              value={form.quantity}
+              onChange={e => set('quantity', e.target.value)}
+              placeholder="Number of shares"
+              min="1"
+              className={inputClass}
+            />
+          </div>
+
+          {/* Order type */}
+          <div>
+            <label className={labelClass}>Order Type</label>
+            <select value={form.orderType} onChange={e => set('orderType', e.target.value as OrderType)} className={inputClass}>
+              <option value="Market">Market</option>
+              <option value="Limit">Limit</option>
+              <option value="Stop">Stop</option>
+            </select>
+          </div>
+
+          {/* Limit / Stop price */}
+          {showLimitPrice && (
+            <div>
+              <label className={labelClass}>{form.orderType === 'Limit' ? 'Limit Price' : 'Stop Price'}</label>
+              <input
+                type="number"
+                value={form.limitPrice}
+                onChange={e => set('limitPrice', e.target.value)}
+                placeholder="$0.00"
+                step="0.01"
+                min="0"
+                className={inputClass}
+              />
+            </div>
+          )}
+
+          {/* Notes */}
+          <div>
+            <label className={labelClass}>Notes</label>
+            <textarea
+              value={form.notes}
+              onChange={e => set('notes', e.target.value)}
+              placeholder="Optional notes..."
+              rows={3}
+              className={inputClass + ' resize-none'}
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
+          <Button kind="secondary" size="sm" onClick={onClose}>Cancel</Button>
+          <Button
+            kind="primary"
+            size="sm"
+            icon={IconPlus}
+            onClick={handleSubmit}
+          >
+            Submit Order
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/*  Main view                                                          */
+/* ------------------------------------------------------------------ */
+
 export const TradeBlotterView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [clientFilter, setClientFilter] = useState<string>('All');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [showNewOrderModal, setShowNewOrderModal] = useState(false);
+
+  const allClientNames = useMemo(() => [...new Set(orders.map(o => o.clientName))], [orders]);
 
   const filteredOrders = useMemo(() => {
-    return MOCK_ORDERS.filter(o => {
+    return orders.filter(o => {
       if (!matchesStatusFilter(o.status, statusFilter)) return false;
       if (clientFilter !== 'All' && o.clientName !== clientFilter) return false;
       return true;
     });
-  }, [statusFilter, clientFilter]);
+  }, [orders, statusFilter, clientFilter]);
 
   // KPI calculations
-  const ordersToday = MOCK_ORDERS.filter(o => o.timestamp.startsWith('2026-04-22')).length;
-  const pendingCount = MOCK_ORDERS.filter(o => o.status === 'Pending Approval').length;
-  const executedCount = MOCK_ORDERS.filter(o => o.status === 'Filled' || o.status === 'Partially Filled').length;
-  const rejectedCancelledCount = MOCK_ORDERS.filter(o => o.status === 'Rejected' || o.status === 'Cancelled').length;
+  const ordersToday = orders.filter(o => o.timestamp.startsWith('2026-04-22')).length;
+  const pendingCount = orders.filter(o => o.status === 'Pending Approval').length;
+  const executedCount = orders.filter(o => o.status === 'Filled' || o.status === 'Partially Filled').length;
+  const rejectedCancelledCount = orders.filter(o => o.status === 'Rejected' || o.status === 'Cancelled').length;
+
+  const handleNewOrderSubmit = (newOrder: Order) => {
+    setOrders(prev => [newOrder, ...prev]);
+    setShowNewOrderModal(false);
+  };
 
   return (
     <div className="max-w-[1400px] mx-auto px-6 py-6">
@@ -749,7 +986,7 @@ export const TradeBlotterView: React.FC = () => {
           <h1 className="text-2xl font-bold text-slate-900">Trade Blotter</h1>
           <p className="text-sm text-slate-500 mt-0.5">Order management and execution tracking</p>
         </div>
-        <Button kind="primary" size="md" icon={IconPlus}>
+        <Button kind="primary" size="md" icon={IconPlus} onClick={() => setShowNewOrderModal(true)}>
           New Order
         </Button>
       </div>
@@ -776,7 +1013,7 @@ export const TradeBlotterView: React.FC = () => {
                 className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400"
               >
                 <option value="All">All Clients</option>
-                {CLIENT_NAMES.map(n => (
+                {allClientNames.map(n => (
                   <option key={n} value={n}>{n}</option>
                 ))}
               </select>
@@ -899,7 +1136,7 @@ export const TradeBlotterView: React.FC = () => {
         {/* Table footer */}
         <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50/50">
           <div className="text-xs text-slate-500">
-            Showing {filteredOrders.length} of {MOCK_ORDERS.length} orders
+            Showing {filteredOrders.length} of {orders.length} orders
           </div>
           <div className="text-xs text-slate-400">
             Last refreshed: Apr 22, 2026 12:05 PM
@@ -910,6 +1147,11 @@ export const TradeBlotterView: React.FC = () => {
       {/* Order detail panel */}
       {selectedOrder && (
         <OrderDetailPanel order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      )}
+
+      {/* New order modal */}
+      {showNewOrderModal && (
+        <NewOrderModal onSubmit={handleNewOrderSubmit} onClose={() => setShowNewOrderModal(false)} />
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import {
   IconLayers,
   IconPulse,
   IconHistory,
+  IconBrief,
   IconShield,
   IconRocket,
   IconBook,
@@ -26,6 +27,7 @@ import {
   IconHousehold,
   IconFilter,
   IconReceipt,
+  IconLock,
 } from '@/components/icons';
 import type { HistoryItem } from '@/types';
 
@@ -191,9 +193,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             id="insights"
             icon={IconPulse}
             label="Insights"
-            badge="3"
+            badge="11"
             active={view === 'insights'}
             onClick={() => setView('insights')}
+          />
+          <NavItem
+            id="reports"
+            icon={IconBrief}
+            label="Report builder"
+            active={view === 'reports'}
+            onClick={() => setView('reports')}
           />
           <NavItem
             id="goals"
@@ -276,6 +285,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               badge="8"
               active={view === 'pipeline'}
               onClick={() => setView('pipeline')}
+            />
+            <NavItem
+              id="portal"
+              icon={IconLock}
+              label="Client portal"
+              active={view === 'portal'}
+              onClick={() => setView('portal')}
             />
             <NavItem
               id="compliance"

@@ -23,8 +23,10 @@ import { ModelPortfolioView } from '@/views/ModelPortfolioView';
 import { HouseholdsView } from '@/views/HouseholdsView';
 import { AutoPilotView } from '@/views/AutoPilotView';
 import { TradeBlotterView } from '@/views/TradeBlotterView';
+import { ClientPortalView } from '@/views/ClientPortalView';
 import { GoalsView } from '@/views/GoalsView';
 import { PipelineView } from '@/views/PipelineView';
+import { ReportBuilderView } from '@/views/ReportBuilderView';
 import SettingsView from '@/views/SettingsView';
 import { CLIENTS } from '@/data/clients';
 import { TEMPLATES, HISTORY_ITEMS } from '@/data/templates';
@@ -36,7 +38,7 @@ type ViewId =
   | 'clients' | 'library' | 'insights' | 'history' | 'result'
   | 'compliance' | 'onboarding' | 'playbooks' | 'collab' | 'team' | 'explain'
   | 'briefing' | 'clienthub' | 'batch' | 'campaigns' | 'models' | 'autopilot'
-  | 'households' | 'goals' | 'trades' | 'pipeline' | 'settings';
+  | 'households' | 'goals' | 'trades' | 'pipeline' | 'portal' | 'reports' | 'settings';
 
 // Placeholder stubs for views not yet migrated
 const PlaceholderView = ({ title }: { title: string }) => (
@@ -168,7 +170,7 @@ function App() {
       case 'askbook':
         return <AskBookView />;
       case 'clients':
-        return <ClientsView openTemplate={openTemplate} openClientHub={openClientHub} />;
+        return <ClientsView openTemplate={openTemplate} openClientHub={openClientHub} setView={setView} />;
       case 'library':
         return <LibraryView openTemplate={openTemplate} />;
       case 'insights':
@@ -197,6 +199,10 @@ function App() {
         return <GoalsView />;
       case 'pipeline':
         return <PipelineView />;
+      case 'portal':
+        return <ClientPortalView />;
+      case 'reports':
+        return <ReportBuilderView />;
       case 'compliance':
         return <ComplianceView />;
       case 'onboarding':
