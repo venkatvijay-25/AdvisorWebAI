@@ -439,11 +439,65 @@ const ClientPreviewModal: React.FC<{ client: PortalClient; onClose: () => void }
 
 /* ── Main component ────────────────────────────────── */
 
+/* ── Manage Access Modal ──────────────────────────── */
+
+const ManageAccessModal: React.FC<{ clients: PortalClient[]; onClose: () => void }> = ({ clients, onClose }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-xl bg-brand-50 flex items-center justify-center">
+            <IconUsers size={16} stroke="#2FA4F9" sw={2} />
+          </div>
+          <h3 className="font-semibold text-slate-900">Manage Portal Access</h3>
+        </div>
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition">
+          <IconX size={18} stroke="#64748B" />
+        </button>
+      </div>
+      <div className="px-6 py-5 space-y-3 max-h-[60vh] overflow-y-auto scroll-thin">
+        {clients.map(c => {
+          const cfg = statusConfig[c.status];
+          return (
+            <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition">
+              <Avatar initials={c.initials} color={c.color} size="md" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-semibold text-slate-900">{c.name}</div>
+                <div className="text-[11px] text-slate-500">{c.email}</div>
+              </div>
+              <Badge tone={cfg.tone}>{cfg.label}</Badge>
+              {c.status === 'active' && (
+                <button className="text-[11px] font-medium text-rose-500 hover:text-rose-700 px-2 py-1 rounded-lg hover:bg-rose-50 transition">
+                  Revoke
+                </button>
+              )}
+              {c.status === 'invited' && (
+                <button className="text-[11px] font-medium text-brand-600 hover:text-brand-700 px-2 py-1 rounded-lg hover:bg-brand-50 transition">
+                  Resend
+                </button>
+              )}
+              {c.status === 'not-set-up' && (
+                <button className="text-[11px] font-medium text-brand-600 hover:text-brand-700 px-2 py-1 rounded-lg hover:bg-brand-50 transition">
+                  Invite
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end">
+        <Button kind="secondary" size="sm" onClick={onClose}>Close</Button>
+      </div>
+    </div>
+  </div>
+);
+
 export const ClientPortalView: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharePreselect, setSharePreselect] = useState<string | undefined>(undefined);
   const [showPreview, setShowPreview] = useState(false);
+  const [showAccessModal, setShowAccessModal] = useState(false);
 
   const selectedClient = selectedClientId
     ? PORTAL_CLIENTS.find(c => c.id === selectedClientId) || null
@@ -472,6 +526,11 @@ export const ClientPortalView: React.FC = () => {
         />
       )}
 
+      {/* Manage access modal */}
+      {showAccessModal && (
+        <ManageAccessModal clients={PORTAL_CLIENTS} onClose={() => setShowAccessModal(false)} />
+      )}
+
       {/* Client preview modal */}
       {showPreview && selectedClient && selectedClient.status === 'active' && (
         <ClientPreviewModal client={selectedClient} onClose={() => setShowPreview(false)} />
@@ -486,7 +545,7 @@ export const ClientPortalView: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button kind="secondary" size="sm" icon={IconUsers}>Manage access</Button>
+          <Button kind="secondary" size="sm" icon={IconUsers} onClick={() => setShowAccessModal(true)}>Manage access</Button>
           <Button kind="primary" size="sm" icon={IconShare} onClick={() => setShowShareModal(true)}>Share document</Button>
         </div>
       </div>
@@ -552,10 +611,10 @@ export const ClientPortalView: React.FC = () => {
                       <div>
                         {client.status === 'active' && (
                           <button
-                            onClick={e => { e.stopPropagation(); openShareForClient(client.id); }}
+                            onClick={e => { e.stopPropagation(); setSelectedClientId(client.id); setShowPreview(true); }}
                             className="text-xs font-semibold text-brand-600 hover:text-brand-700 px-2.5 py-1 rounded-lg bg-brand-50 hover:bg-brand-100 transition"
                           >
-                            Open portal
+                            Preview portal
                           </button>
                         )}
                         {client.status === 'invited' && (
