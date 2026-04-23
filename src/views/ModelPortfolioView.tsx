@@ -278,7 +278,7 @@ export const ModelPortfolioView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6 pb-8">
       {/* Header */}
       <div className="fade-up flex items-start justify-between">
         <div className="flex items-center gap-3">

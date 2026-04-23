@@ -5,9 +5,11 @@ import {
   IconCheck,
   IconCheckCircle,
   IconChevronDown,
+  IconChevronLeft,
   IconClock,
   IconDownload,
   IconMail,
+  IconSearch,
   IconSparkles,
   IconX,
 } from '@/components/icons';
@@ -84,6 +86,10 @@ export const ReportBuilderView = () => {
   const [recurChoice, setRecurChoice] = useState<string | null>(null);
   const [emailModal, setEmailModal] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+
+  // Preview state
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewPage, setPreviewPage] = useState(1);
 
   const toggleSection = (key: string) => {
     setEnabledSections(prev => {
@@ -182,6 +188,381 @@ export const ReportBuilderView = () => {
       </Card>
     </div>
   );
+
+  /* ---------------------------------------------------------------- */
+  /*  Preview modal data                                               */
+  /* ---------------------------------------------------------------- */
+  const PREVIEW_TOTAL_PAGES = 5;
+
+  const monthlyReturns = [
+    { month: 'Jan', value: 3.2 },
+    { month: 'Feb', value: 1.8 },
+    { month: 'Mar', value: -0.9 },
+    { month: 'Apr', value: 2.5 },
+    { month: 'May', value: 4.1 },
+    { month: 'Jun', value: -1.3 },
+    { month: 'Jul', value: 2.8 },
+    { month: 'Aug', value: 1.5 },
+    { month: 'Sep', value: -0.4 },
+    { month: 'Oct', value: 3.6 },
+    { month: 'Nov', value: 2.1 },
+    { month: 'Dec', value: 1.9 },
+  ];
+
+  const allocationData = [
+    { label: 'US Equities', pct: 42, color: '#2FA4F9' },
+    { label: 'Intl Equities', pct: 18, color: '#6366F1' },
+    { label: 'Fixed Income', pct: 22, color: '#10B981' },
+    { label: 'Alternatives', pct: 12, color: '#F59E0B' },
+    { label: 'Cash', pct: 6, color: '#94A3B8' },
+  ];
+
+  const PreviewModal = () => {
+    const renderPage = () => {
+      switch (previewPage) {
+        /* --- Page 1: Cover --- */
+        case 1:
+          return (
+            <div className="flex flex-col h-full">
+              <div
+                className="px-10 py-14 text-white relative flex-1 flex flex-col justify-center"
+                style={{ backgroundColor: themeHex }}
+              >
+                <div className="absolute top-0 right-0 w-40 h-40 rounded-bl-full opacity-10 bg-white" />
+                {coverStyle === 'Premium' && (
+                  <div className="absolute bottom-0 left-0 w-32 h-32 rounded-tr-full opacity-10 bg-white" />
+                )}
+                {firmLogo && (
+                  <div className="flex items-center gap-2 mb-8">
+                    <div className="w-9 h-9 rounded-md bg-white/20 flex items-center justify-center">
+                      <span className="text-sm font-bold text-white">F</span>
+                    </div>
+                    <span className="text-sm font-semibold tracking-wide uppercase opacity-80">
+                      FlyerFT Wealth
+                    </span>
+                  </div>
+                )}
+                <p className="text-xs font-medium uppercase tracking-wider opacity-70 mb-2">{reportType}</p>
+                <h2 className="text-3xl font-bold tracking-tight">{clientName}</h2>
+                <p className="text-base opacity-80 mt-2">
+                  {period === 'Custom' ? `${customFrom} to ${customTo}` : period}
+                </p>
+                {coverStyle !== 'Minimal' && (
+                  <div className="mt-10 pt-5 border-t border-white/20 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">VV</div>
+                    <div>
+                      <p className="text-sm font-semibold">Vijay Venkat</p>
+                      <p className="text-xs opacity-70">Sr. Wealth Advisor</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="px-10 py-4 text-xs text-slate-400 border-t border-slate-100">
+                Confidential — Prepared by FlyerFT Wealth Management
+              </div>
+            </div>
+          );
+
+        /* --- Page 2: Executive Summary --- */
+        case 2:
+          return (
+            <div className="px-10 py-8">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-1 h-6 rounded-full" style={{ backgroundColor: themeHex }} />
+                <h2 className="text-xl font-bold text-slate-900">Executive Summary</h2>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                During {period === 'Custom' ? `the custom period` : period}, the portfolio delivered strong
+                risk-adjusted returns, outpacing the blended benchmark by 1.4%. Equity allocations contributed
+                the majority of alpha, while fixed income provided stability amid rising rate expectations.
+                We recommend a modest rebalance toward international equities to capture emerging-market momentum.
+              </p>
+
+              {/* KPI Boxes */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {[
+                  { label: 'Total AUM', value: '$48.2M', delta: '+$2.1M', positive: true },
+                  { label: 'YTD Return', value: '+12.4%', delta: 'vs. 10.8% benchmark', positive: true },
+                  { label: 'Benchmark Delta', value: '+1.4%', delta: 'above blended index', positive: true },
+                  { label: 'Risk Score', value: '6.2 / 10', delta: 'moderate risk', positive: false },
+                ].map((kpi, i) => (
+                  <div key={i} className="rounded-xl border border-slate-200 p-4">
+                    <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">{kpi.label}</div>
+                    <div className="text-lg font-bold text-slate-900">{kpi.value}</div>
+                    <div className={`text-xs mt-0.5 ${kpi.positive ? 'text-emerald-600' : 'text-slate-500'}`}>{kpi.delta}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-brand-50/60 rounded-xl p-4">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <IconSparkles size={14} stroke="#2FA4F9" sw={2} />
+                  <span className="text-xs font-semibold text-brand-700">Key Highlights</span>
+                </div>
+                <ul className="text-sm text-slate-700 space-y-1.5">
+                  <li className="flex items-start gap-2"><span className="text-brand-500 mt-1">•</span>Portfolio up 12.4% YTD, exceeding benchmark by 160bps</li>
+                  <li className="flex items-start gap-2"><span className="text-brand-500 mt-1">•</span>Sharpe ratio improved to 1.38 from 1.21 last quarter</li>
+                  <li className="flex items-start gap-2"><span className="text-brand-500 mt-1">•</span>Tax-loss harvesting captured $320K in realized losses</li>
+                </ul>
+              </div>
+            </div>
+          );
+
+        /* --- Page 3: Portfolio Performance --- */
+        case 3: {
+          const maxAbsVal = Math.max(...monthlyReturns.map(m => Math.abs(m.value)));
+          return (
+            <div className="px-10 py-8">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-1 h-6 rounded-full" style={{ backgroundColor: themeHex }} />
+                <h2 className="text-xl font-bold text-slate-900">Portfolio Performance</h2>
+              </div>
+              <p className="text-sm text-slate-500 mb-4">Monthly returns (%) — {period}</p>
+
+              {/* Bar chart mockup */}
+              <div className="border border-slate-200 rounded-xl p-5 mb-6">
+                <div className="flex items-end gap-2 h-48">
+                  {monthlyReturns.map((m, i) => {
+                    const barHeight = Math.abs(m.value) / maxAbsVal * 100;
+                    const isNeg = m.value < 0;
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center justify-end h-full relative">
+                        {/* Positive bars grow up from center, negative grow down */}
+                        <div className="flex-1 flex items-end justify-center w-full" style={{ paddingBottom: '50%' }}>
+                          {!isNeg && (
+                            <div
+                              className="w-full max-w-[28px] rounded-t-md transition-all"
+                              style={{
+                                height: `${barHeight}%`,
+                                backgroundColor: themeHex,
+                                minHeight: '4px',
+                              }}
+                            />
+                          )}
+                        </div>
+                        {isNeg && (
+                          <div className="flex items-start justify-center w-full">
+                            <div
+                              className="w-full max-w-[28px] rounded-b-md"
+                              style={{
+                                height: `${barHeight * 0.5}%`,
+                                backgroundColor: '#F43F5E',
+                                minHeight: '4px',
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* X-axis labels */}
+                <div className="flex gap-2 mt-2">
+                  {monthlyReturns.map((m, i) => (
+                    <div key={i} className="flex-1 text-center text-[10px] text-slate-400 font-medium">{m.month}</div>
+                  ))}
+                </div>
+                {/* Value labels */}
+                <div className="flex gap-2 mt-1">
+                  {monthlyReturns.map((m, i) => (
+                    <div key={i} className={`flex-1 text-center text-[10px] font-semibold ${m.value >= 0 ? 'text-slate-600' : 'text-rose-500'}`}>
+                      {m.value > 0 ? '+' : ''}{m.value}%
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Cumulative Return', value: '+21.8%' },
+                  { label: 'Best Month', value: '+4.1% (May)' },
+                  { label: 'Worst Month', value: '-1.3% (Jun)' },
+                ].map((s, i) => (
+                  <div key={i} className="bg-slate-50 rounded-xl p-3 text-center">
+                    <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">{s.label}</div>
+                    <div className="text-sm font-bold text-slate-900 mt-1">{s.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        /* --- Page 4: Asset Allocation --- */
+        case 4: {
+          let cumDeg = 0;
+          return (
+            <div className="px-10 py-8">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-1 h-6 rounded-full" style={{ backgroundColor: themeHex }} />
+                <h2 className="text-xl font-bold text-slate-900">Asset Allocation</h2>
+              </div>
+
+              <div className="flex gap-8 mb-6">
+                {/* Pie chart mockup using conic gradient */}
+                <div className="shrink-0">
+                  <div
+                    className="w-44 h-44 rounded-full"
+                    style={{
+                      background: (() => {
+                        const stops: string[] = [];
+                        let deg = 0;
+                        allocationData.forEach(a => {
+                          const end = deg + (a.pct / 100) * 360;
+                          stops.push(`${a.color} ${deg}deg ${end}deg`);
+                          deg = end;
+                        });
+                        return `conic-gradient(${stops.join(', ')})`;
+                      })(),
+                    }}
+                  />
+                </div>
+
+                {/* Legend */}
+                <div className="flex-1 space-y-2.5 pt-2">
+                  {allocationData.map((a, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: a.color }} />
+                      <span className="text-sm text-slate-700 flex-1">{a.label}</span>
+                      <span className="text-sm font-semibold text-slate-900">{a.pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Holdings table */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="text-left px-4 py-2.5 text-[11px] uppercase tracking-wider font-semibold text-slate-400">Holding</th>
+                      <th className="text-right px-4 py-2.5 text-[11px] uppercase tracking-wider font-semibold text-slate-400">Value</th>
+                      <th className="text-right px-4 py-2.5 text-[11px] uppercase tracking-wider font-semibold text-slate-400">Weight</th>
+                      <th className="text-right px-4 py-2.5 text-[11px] uppercase tracking-wider font-semibold text-slate-400">Return</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { name: 'Vanguard S&P 500 ETF', value: '$12.8M', weight: '26.6%', ret: '+14.2%' },
+                      { name: 'iShares Core Agg Bond', value: '$10.6M', weight: '22.0%', ret: '+3.1%' },
+                      { name: 'MSCI EAFE Fund', value: '$8.7M', weight: '18.0%', ret: '+9.8%' },
+                      { name: 'US Growth Fund', value: '$7.4M', weight: '15.4%', ret: '+18.6%' },
+                      { name: 'Real Assets & Alts', value: '$5.8M', weight: '12.0%', ret: '+7.4%' },
+                      { name: 'Money Market', value: '$2.9M', weight: '6.0%', ret: '+4.8%' },
+                    ].map((h, i) => (
+                      <tr key={i} className="border-t border-slate-100">
+                        <td className="px-4 py-2.5 text-slate-800 font-medium">{h.name}</td>
+                        <td className="px-4 py-2.5 text-right text-slate-700">{h.value}</td>
+                        <td className="px-4 py-2.5 text-right text-slate-500">{h.weight}</td>
+                        <td className="px-4 py-2.5 text-right text-emerald-600 font-medium">{h.ret}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        }
+
+        /* --- Page 5: Recommendations --- */
+        case 5:
+          return (
+            <div className="px-10 py-8">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-1 h-6 rounded-full" style={{ backgroundColor: themeHex }} />
+                <h2 className="text-xl font-bold text-slate-900">Recommendations & Next Steps</h2>
+              </div>
+
+              <div className="flex items-center gap-1.5 mb-4">
+                <IconSparkles size={14} stroke="#2FA4F9" sw={2} />
+                <span className="text-xs font-semibold text-brand-700">AI-Generated Insights</span>
+                <Badge tone="purple">GPT-Enhanced</Badge>
+              </div>
+
+              <div className="space-y-3 mb-8">
+                {[
+                  { priority: 'High', text: 'Rebalance international equity allocation from 18% to 22% to capture EM momentum and reduce concentration in US large-cap growth.' },
+                  { priority: 'High', text: 'Execute tax-loss harvesting on international small-cap positions before year-end — estimated $180K in harvestable losses.' },
+                  { priority: 'Medium', text: 'Increase allocation to short-duration TIPS by 3% as a hedge against persistent above-trend inflation.' },
+                  { priority: 'Medium', text: 'Review covered call strategy on concentrated tech holdings to generate additional income while reducing downside exposure.' },
+                  { priority: 'Low', text: 'Consider adding a 2% allocation to digital assets (Bitcoin/Ethereum ETF) for portfolio diversification.' },
+                  { priority: 'Low', text: 'Schedule mid-year estate planning review to evaluate gifting strategy given potential changes to exemption limits.' },
+                ].map((rec, i) => (
+                  <div key={i} className="flex gap-3 rounded-xl border border-slate-200 p-4">
+                    <Badge tone={rec.priority === 'High' ? 'danger' : rec.priority === 'Medium' ? 'warn' : 'muted'}>
+                      {rec.priority}
+                    </Badge>
+                    <p className="text-sm text-slate-700 leading-relaxed flex-1">{rec.text}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-slate-50 rounded-xl p-4">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Next Scheduled Review</h4>
+                <p className="text-sm text-slate-700">
+                  Quarterly review meeting scheduled for <span className="font-semibold">July 15, 2026</span>.
+                  Updated projections and rebalancing recommendations will be prepared 5 business days prior.
+                </p>
+              </div>
+            </div>
+          );
+
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Report Preview</h3>
+              <p className="text-xs text-slate-500 mt-0.5">{reportType} — {clientName} — {period}</p>
+            </div>
+            <button
+              onClick={() => { setShowPreview(false); setPreviewPage(1); }}
+              className="p-1.5 rounded-lg hover:bg-slate-100 transition"
+            >
+              <IconX size={18} stroke="#64748B" />
+            </button>
+          </div>
+
+          {/* Page content */}
+          <div className="flex-1 overflow-y-auto scroll-thin bg-slate-50">
+            <div className="max-w-2xl mx-auto my-6 bg-white rounded-xl shadow-sm border border-slate-200 min-h-[500px]">
+              {renderPage()}
+            </div>
+          </div>
+
+          {/* Footer — page navigation */}
+          <div className="flex items-center justify-between px-6 py-3 border-t border-slate-200">
+            <Button
+              kind="ghost"
+              size="sm"
+              icon={IconChevronLeft}
+              disabled={previewPage <= 1}
+              onClick={() => setPreviewPage(p => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-slate-500 font-medium">
+              Page {previewPage} of {PREVIEW_TOTAL_PAGES}
+            </span>
+            <Button
+              kind="ghost"
+              size="sm"
+              disabled={previewPage >= PREVIEW_TOTAL_PAGES}
+              onClick={() => setPreviewPage(p => Math.min(PREVIEW_TOTAL_PAGES, p + 1))}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   /* ---------------------------------------------------------------- */
   /*  Render                                                           */
@@ -529,6 +910,17 @@ export const ReportBuilderView = () => {
           )}
         </Button>
 
+        {/* Preview Report */}
+        <Button
+          kind="secondary"
+          size="lg"
+          icon={IconSearch}
+          onClick={() => { setShowPreview(true); setPreviewPage(1); }}
+          className="min-w-[160px]"
+        >
+          Preview Report
+        </Button>
+
         {/* Schedule recurring */}
         <div className="relative">
           <Button
@@ -564,6 +956,9 @@ export const ReportBuilderView = () => {
 
       {/* Email modal */}
       {emailModal && <EmailModal />}
+
+      {/* Preview modal */}
+      {showPreview && <PreviewModal />}
     </div>
   );
 };

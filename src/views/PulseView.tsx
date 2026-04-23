@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IconRefresh, IconBell, IconSparkles, IconMail, IconTarget, IconChevronDown, IconChevronRight, IconZap, type IcoProps } from '@/components/icons';
+import { IconRefresh, IconBell, IconSparkles, IconMail, IconTarget, IconChevronDown, IconChevronRight, IconZap, IconX, type IcoProps } from '@/components/icons';
 import { iconMap } from '@/components/icons';
 import { Badge, Button, Card } from '@/components/ui';
 import { PULSE_EVENTS } from '@/data/meetings';
@@ -10,9 +10,46 @@ const toneMap: Record<string, { bg: string; icon: string; label: string; tone: '
   fyi: { bg: 'bg-brand-50', icon: '#1B8AD8', label: 'FYI', tone: 'brand' },
 };
 
+/* ---- Alert config types ---- */
+type Severity = 'info' | 'warning' | 'critical';
+
+interface AlertCategory {
+  id: string;
+  label: string;
+  placeholder: string;
+  enabled: boolean;
+  threshold: string;
+  severity: Severity;
+}
+
+interface AlertDelivery {
+  inApp: boolean;
+  email: boolean;
+  sms: boolean;
+}
+
+const DEFAULT_CATEGORIES: AlertCategory[] = [
+  { id: 'drift', label: 'Drift %', placeholder: 'Drift > _%', enabled: true, threshold: '5', severity: 'warning' },
+  { id: 'concentration', label: 'Concentration %', placeholder: 'Concentration > _%', enabled: false, threshold: '15', severity: 'warning' },
+  { id: 'duration', label: 'Duration Change', placeholder: 'Duration change > _yr', enabled: false, threshold: '0.5', severity: 'info' },
+  { id: 'market', label: 'Market Event', placeholder: 'Any market event', enabled: true, threshold: '', severity: 'critical' },
+  { id: 'performance', label: 'Performance', placeholder: 'YTD underperform > _%', enabled: false, threshold: '2', severity: 'warning' },
+];
+
+const DEFAULT_DELIVERY: AlertDelivery = { inApp: true, email: false, sms: false };
+
+const SEVERITY_OPTIONS: { value: Severity; label: string; color: string }[] = [
+  { value: 'info', label: 'Info', color: 'bg-sky-100 text-sky-700' },
+  { value: 'warning', label: 'Warning', color: 'bg-amber-100 text-amber-700' },
+  { value: 'critical', label: 'Critical', color: 'bg-rose-100 text-rose-700' },
+];
+
 export const PulseView: React.FC = () => {
   const [filter, setFilter] = useState('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAlerts, setShowAlerts] = useState(false);
+  const [alertCategories, setAlertCategories] = useState<AlertCategory[]>(DEFAULT_CATEGORIES);
+  const [alertDelivery, setAlertDelivery] = useState<AlertDelivery>(DEFAULT_DELIVERY);
 
   const counts = PULSE_EVENTS.reduce<Record<string, number>>((a, e) => {
     a[e.severity] = (a[e.severity] || 0) + 1;
@@ -38,7 +75,7 @@ export const PulseView: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <Button kind="secondary" size="sm" icon={IconRefresh}>Refresh</Button>
-          <Button kind="soft" size="sm" icon={IconBell}>Set alerts</Button>
+          <Button kind="soft" size="sm" icon={IconBell} onClick={() => setShowAlerts(true)}>Set alerts</Button>
         </div>
       </div>
 
@@ -190,6 +227,133 @@ export const PulseView: React.FC = () => {
           );
         })}
       </div>
+
+      {/* ============ SET ALERTS MODAL ============ */}
+      {showAlerts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAlerts(false)} />
+
+          {/* Modal */}
+          <div className="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 rounded-xl bg-brand-50 flex items-center justify-center">
+                  <IconBell size={18} stroke="#2FA4F9" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Alert configuration</h2>
+                  <p className="text-xs text-slate-500">Choose what triggers alerts and how you receive them</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAlerts(false)}
+                className="h-8 w-8 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
+              >
+                <IconX size={18} stroke="#64748B" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              {/* Alert Categories */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900 mb-3">Alert categories</h3>
+                <div className="space-y-3">
+                  {alertCategories.map((cat) => (
+                    <div key={cat.id} className={`rounded-xl border p-4 transition-colors ${cat.enabled ? 'border-brand-200 bg-brand-50/30' : 'border-slate-200 bg-slate-50/50'}`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-slate-800">{cat.label}</span>
+                        {/* Toggle */}
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={cat.enabled}
+                            onChange={() =>
+                              setAlertCategories((prev) =>
+                                prev.map((c) => (c.id === cat.id ? { ...c, enabled: !c.enabled } : c)),
+                              )
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-200 peer-checked:bg-brand-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                        </label>
+                      </div>
+                      {cat.enabled && (
+                        <div className="flex items-center gap-3">
+                          {/* Threshold input */}
+                          <input
+                            type="text"
+                            placeholder={cat.placeholder}
+                            value={cat.threshold}
+                            onChange={(e) =>
+                              setAlertCategories((prev) =>
+                                prev.map((c) => (c.id === cat.id ? { ...c, threshold: e.target.value } : c)),
+                              )
+                            }
+                            className="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent placeholder:text-slate-400"
+                          />
+                          {/* Severity selector */}
+                          <div className="flex items-center gap-1">
+                            {SEVERITY_OPTIONS.map((sev) => (
+                              <button
+                                key={sev.value}
+                                onClick={() =>
+                                  setAlertCategories((prev) =>
+                                    prev.map((c) => (c.id === cat.id ? { ...c, severity: sev.value } : c)),
+                                  )
+                                }
+                                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                                  cat.severity === sev.value
+                                    ? sev.color + ' ring-1 ring-current'
+                                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                }`}
+                              >
+                                {sev.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Delivery Channels */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900 mb-3">Alert delivery</h3>
+                <div className="flex items-center gap-4">
+                  {([
+                    { key: 'inApp' as const, label: 'In-App' },
+                    { key: 'email' as const, label: 'Email' },
+                    { key: 'sms' as const, label: 'SMS' },
+                  ]).map((ch) => (
+                    <label key={ch.key} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={alertDelivery[ch.key]}
+                        onChange={() =>
+                          setAlertDelivery((prev) => ({ ...prev, [ch.key]: !prev[ch.key] }))
+                        }
+                        className="h-4 w-4 rounded border-slate-300 text-brand-500 focus:ring-brand-400"
+                      />
+                      <span className="text-sm text-slate-700">{ch.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100">
+              <Button kind="secondary" size="sm" onClick={() => setShowAlerts(false)}>Cancel</Button>
+              <Button kind="primary" size="sm" icon={IconBell} onClick={() => setShowAlerts(false)}>Save alerts</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

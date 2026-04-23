@@ -728,23 +728,29 @@ const DetailItem: React.FC<{ label: string; value?: string; children?: React.Rea
 
 interface NewOrderForm {
   clientName: string;
+  account: string;
   action: OrderAction;
   ticker: string;
   securityName: string;
   quantity: string;
   orderType: OrderType;
   limitPrice: string;
+  allocationMethod: string;
+  rationale: string;
   notes: string;
 }
 
 const EMPTY_FORM: NewOrderForm = {
   clientName: '',
+  account: '',
   action: 'BUY',
   ticker: '',
   securityName: '',
   quantity: '',
   orderType: 'Market',
   limitPrice: '',
+  allocationMethod: '',
+  rationale: '',
   notes: '',
 };
 
@@ -826,6 +832,18 @@ const NewOrderModal: React.FC<{ onSubmit: (order: Order) => void; onClose: () =>
             </select>
           </div>
 
+          {/* Account / Custodian */}
+          <div>
+            <label className={labelClass}>Account / Custodian</label>
+            <select value={form.account} onChange={e => set('account', e.target.value)} className={inputClass}>
+              <option value="">Select account...</option>
+              <option value="Schwab - Primary Brokerage">Schwab - Primary Brokerage</option>
+              <option value="Fidelity - IRA">Fidelity - IRA</option>
+              <option value="Pershing - Trust Account">Pershing - Trust Account</option>
+              <option value="Schwab - Roth IRA">Schwab - Roth IRA</option>
+            </select>
+          </div>
+
           {/* Action toggle */}
           <div>
             <label className={labelClass}>Action</label>
@@ -890,6 +908,18 @@ const NewOrderModal: React.FC<{ onSubmit: (order: Order) => void; onClose: () =>
             />
           </div>
 
+          {/* Allocation Method */}
+          <div>
+            <label className={labelClass}>Allocation Method</label>
+            <select value={form.allocationMethod} onChange={e => set('allocationMethod', e.target.value)} className={inputClass}>
+              <option value="">Select allocation...</option>
+              <option value="Pro-rata by AUM">Pro-rata by AUM</option>
+              <option value="Equal weight">Equal weight</option>
+              <option value="Custom">Custom</option>
+              <option value="Single account">Single account</option>
+            </select>
+          </div>
+
           {/* Order type */}
           <div>
             <label className={labelClass}>Order Type</label>
@@ -916,13 +946,28 @@ const NewOrderModal: React.FC<{ onSubmit: (order: Order) => void; onClose: () =>
             </div>
           )}
 
+          {/* Trade Rationale (Compliance) */}
+          <div>
+            <label className={labelClass}>Trade Rationale (Compliance)</label>
+            <select value={form.rationale} onChange={e => set('rationale', e.target.value)} className={inputClass}>
+              <option value="">Select rationale...</option>
+              <option value="Rebalance">Rebalance</option>
+              <option value="Tax-Loss Harvest">Tax-Loss Harvest</option>
+              <option value="Client Request">Client Request</option>
+              <option value="Model Change">Model Change</option>
+              <option value="Risk Reduction">Risk Reduction</option>
+              <option value="New Investment">New Investment</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
           {/* Notes */}
           <div>
             <label className={labelClass}>Notes</label>
             <textarea
               value={form.notes}
               onChange={e => set('notes', e.target.value)}
-              placeholder="Optional notes..."
+              placeholder="Additional notes..."
               rows={3}
               className={inputClass + ' resize-none'}
             />

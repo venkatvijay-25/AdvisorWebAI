@@ -3,6 +3,7 @@ import {
   IconUser, IconShield, IconScale, IconPie, IconCheckCircle,
   IconChevronLeft, IconChevronRight, IconCheck, IconBrief,
   IconArrowUp, IconDownload, IconAlert, IconTarget, IconGlobe,
+  IconDatabase, IconLink,
 } from '@/components/icons';
 import { Badge, Button, Card } from '@/components/ui';
 
@@ -56,11 +57,19 @@ interface ComplianceChecks {
   ipsGenerated: boolean;
 }
 
+interface AccountLink {
+  custodian: string;
+  accountType: string;
+  accountNumber: string;
+  connected: boolean;
+}
+
 const STEPS = [
   { key: 'client', label: 'Client Information', icon: IconUser },
   { key: 'kyc', label: 'KYC Verification', icon: IconShield },
   { key: 'risk', label: 'Risk Assessment', icon: IconScale },
   { key: 'investment', label: 'Investment Preferences', icon: IconPie },
+  { key: 'accounts', label: 'Account Linking', icon: IconDatabase },
   { key: 'review', label: 'Review & Submit', icon: IconCheckCircle },
 ];
 
@@ -111,12 +120,19 @@ const OnboardingView: React.FC = () => {
     modelPortfolio: '', assetClasses: [], esg: false, restrictions: '', benchmark: '',
   });
 
-  // Step 5
+  // Step 5: Account Linking
+  const [accounts, setAccounts] = useState<AccountLink[]>([]);
+  const [importHoldings, setImportHoldings] = useState(false);
+  const [newAccount, setNewAccount] = useState<Omit<AccountLink, 'connected'>>({
+    custodian: '', accountType: '', accountNumber: '',
+  });
+
+  // Step 6
   const [compliance, setCompliance] = useState<ComplianceChecks>({
     termsAccepted: false, kycVerified: false, suitabilityConfirmed: false, ipsGenerated: false,
   });
 
-  const goNext = () => setStep((s) => Math.min(s + 1, 4));
+  const goNext = () => setStep((s) => Math.min(s + 1, 5));
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const toggleAssetClass = (cls: string) =>
@@ -162,6 +178,9 @@ const OnboardingView: React.FC = () => {
     setRisk({ horizon: '', tolerance: '', experience: '', annualIncome: '', netWorth: '', q1: '', q2: '', q3: '', q4: '' });
     setInvestment({ modelPortfolio: '', assetClasses: [], esg: false, restrictions: '', benchmark: '' });
     setCompliance({ termsAccepted: false, kycVerified: false, suitabilityConfirmed: false, ipsGenerated: false });
+    setAccounts([]);
+    setImportHoldings(false);
+    setNewAccount({ custodian: '', accountType: '', accountNumber: '' });
   }
 
   /* ---------------------------------------------------------------- */
@@ -573,7 +592,148 @@ const OnboardingView: React.FC = () => {
   );
 
   /* ---------------------------------------------------------------- */
-  /*  Step 5: Review & Submit                                          */
+  /*  Step 5: Account Linking                                          */
+  /* ---------------------------------------------------------------- */
+
+  const CUSTODIANS = ['Schwab', 'Fidelity', 'Pershing', 'Interactive Brokers', 'TD Ameritrade'];
+  const ACCOUNT_TYPES = ['Brokerage', 'IRA', 'Roth IRA', '401(k) Rollover', 'Trust', 'UTMA/UGMA'];
+
+  const handleConnectAccount = () => {
+    if (newAccount.custodian && newAccount.accountType && newAccount.accountNumber) {
+      setAccounts((prev) => [...prev, { ...newAccount, connected: true }]);
+      setNewAccount({ custodian: '', accountType: '', accountNumber: '' });
+    }
+  };
+
+  const handleDisconnectAccount = (index: number) => {
+    setAccounts((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const maskAccountNumber = (num: string) => {
+    if (num.length <= 4) return '****' + num;
+    return '****' + num.slice(-4);
+  };
+
+  const renderAccountLinking = () => (
+    <div className="space-y-6">
+      <p className="text-sm text-slate-500">
+        Connect existing custodian accounts to import portfolio data and enable automated trading.
+      </p>
+
+      {/* Add Account Section */}
+      <div className="border border-slate-100 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <IconLink size={16} stroke="#2FA4F9" />
+          <h3 className="text-sm font-semibold text-slate-800">Add Account</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label required>Custodian</Label>
+            <select className={selectCls} value={newAccount.custodian}
+              onChange={(e) => setNewAccount({ ...newAccount, custodian: e.target.value })}>
+              <option value="">Select custodian...</option>
+              {CUSTODIANS.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label required>Account Type</Label>
+            <select className={selectCls} value={newAccount.accountType}
+              onChange={(e) => setNewAccount({ ...newAccount, accountType: e.target.value })}>
+              <option value="">Select account type...</option>
+              {ACCOUNT_TYPES.map((t) => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div>
+            <Label required>Account Number</Label>
+            <input
+              type="password"
+              className={inputCls}
+              placeholder="Enter account number"
+              value={newAccount.accountNumber}
+              onChange={(e) => setNewAccount({ ...newAccount, accountNumber: e.target.value })}
+            />
+          </div>
+          <div className="flex items-end">
+            <Button
+              kind="primary"
+              icon={IconLink}
+              onClick={handleConnectAccount}
+              disabled={!newAccount.custodian || !newAccount.accountType || !newAccount.accountNumber}
+              className={!newAccount.custodian || !newAccount.accountType || !newAccount.accountNumber ? 'opacity-50 cursor-not-allowed' : ''}
+            >
+              Connect Account
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Connected Accounts */}
+      {accounts.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800 mb-3">Connected Accounts</h3>
+          <div className="space-y-3">
+            {accounts.map((acct, i) => (
+              <div key={i} className="flex items-center justify-between border border-slate-100 rounded-xl p-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-[#2FA4F9]/10 flex items-center justify-center">
+                    <IconDatabase size={18} stroke="#2FA4F9" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{acct.custodian}</p>
+                    <p className="text-xs text-slate-500">
+                      {acct.accountType} &middot; {maskAccountNumber(acct.accountNumber)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge tone="success">Connected</Badge>
+                  <button
+                    onClick={() => handleDisconnectAccount(i)}
+                    className="text-xs text-rose-500 hover:text-rose-600 font-medium transition"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Import Holdings Toggle */}
+      <div className="border border-slate-100 rounded-xl p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">Import Holdings</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Automatically import current holdings after linking</p>
+          </div>
+          <button
+            onClick={() => setImportHoldings(!importHoldings)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${
+              importHoldings ? 'bg-[#2FA4F9]' : 'bg-slate-200'
+            }`}
+          >
+            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+              importHoldings ? 'translate-x-[22px]' : 'translate-x-0.5'
+            }`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Security Note */}
+      <div className="flex items-start gap-2 rounded-lg bg-slate-50 p-3">
+        <IconShield size={16} stroke="#64748b" className="shrink-0 mt-0.5" />
+        <p className="text-xs text-slate-500">
+          Connections are secured via OAuth 2.0. No credentials are stored.
+        </p>
+      </div>
+    </div>
+  );
+
+  /* ---------------------------------------------------------------- */
+  /*  Step 6: Review & Submit                                          */
   /* ---------------------------------------------------------------- */
 
   const SummaryRow: React.FC<{ label: string; value: string | React.ReactNode }> = ({ label, value }) => (
@@ -649,6 +809,29 @@ const OnboardingView: React.FC = () => {
           </div>
         </div>
 
+        {/* Account Linking Summary */}
+        <div className="border border-slate-100 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <IconDatabase size={16} stroke="#2FA4F9" />
+            <h3 className="text-sm font-semibold text-slate-800">Account Linking</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+            <SummaryRow label="Connected Accounts" value={`${accounts.length}`} />
+            <SummaryRow label="Import Holdings" value={importHoldings ? 'Enabled' : 'Disabled'} />
+          </div>
+          {accounts.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {accounts.map((acct, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm">
+                  <Badge tone="success">Connected</Badge>
+                  <span className="text-slate-800 font-medium">{acct.custodian}</span>
+                  <span className="text-slate-500">{acct.accountType} &middot; {maskAccountNumber(acct.accountNumber)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Compliance Checklist */}
         <div className="border border-slate-100 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
@@ -686,7 +869,7 @@ const OnboardingView: React.FC = () => {
   /*  Render                                                           */
   /* ---------------------------------------------------------------- */
 
-  const stepContent = [renderClientInfo, renderKyc, renderRisk, renderInvestment, renderReview];
+  const stepContent = [renderClientInfo, renderKyc, renderRisk, renderInvestment, renderAccountLinking, renderReview];
   const allComplianceChecked = compliance.termsAccepted && compliance.kycVerified && compliance.suitabilityConfirmed && compliance.ipsGenerated;
 
   return (
@@ -761,7 +944,7 @@ const OnboardingView: React.FC = () => {
           <Button kind="ghost" onClick={() => {/* mock save draft */}}>
             Save as Draft
           </Button>
-          {step < 4 ? (
+          {step < 5 ? (
             <Button kind="primary" icon={IconChevronRight} onClick={goNext}>
               Next
             </Button>

@@ -623,10 +623,14 @@ const GoalCard: React.FC<{ goal: Goal; selected: boolean; onSelect: () => void }
 /*  Main View                                                          */
 /* ------------------------------------------------------------------ */
 
+type ScenarioType = 'base' | 'optimistic' | 'conservative';
+
 export const GoalsView: React.FC = () => {
   const [selectedClient, setSelectedClient] = useState('All clients');
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
+  const [scenario, setScenario] = useState<ScenarioType>('base');
+  const [contributionDelta, setContributionDelta] = useState(0);
 
   const filteredGoals = selectedClient === 'All clients'
     ? GOALS
@@ -687,7 +691,7 @@ export const GoalsView: React.FC = () => {
           </div>
 
           {/* KPI strip */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-5 gap-4 mb-8">
             <KPI
               label="Total Goals"
               value={filteredGoals.length}
@@ -712,7 +716,177 @@ export const GoalsView: React.FC = () => {
               sub="action required"
               accent="#F43F5E"
             />
+            <KPI
+              label="Avg. AI Confidence"
+              value={filteredGoals.length > 0 ? `${Math.round(filteredGoals.reduce((sum, g) => sum + g.aiConfidence, 0) / filteredGoals.length)}%` : '—'}
+              sub="across filtered goals"
+              accent="#6366F1"
+            />
           </div>
+
+          {/* Scenario Analysis */}
+          {(() => {
+            const scenarioReturnDelta = scenario === 'optimistic' ? 2 : scenario === 'conservative' ? -2 : 0;
+
+            // Compute projected surplus/shortfall impact from contribution change
+            // Mock: each $1K monthly change over avg 4 years = ~$48K impact
+            const contributionImpact = contributionDelta * 48;
+            const returnImpact = scenarioReturnDelta * 320_000; // mock: 2% return shift = ~$320K on avg portfolio
+            const totalImpactChange = contributionImpact + returnImpact;
+
+            // Cash flow projection data: portfolio value over 5 years
+            const baseValues = [48.2, 53.1, 58.4, 64.2, 70.8, 78.1]; // in millions
+            const optimisticValues = baseValues.map(v => +(v * 1.12).toFixed(1));
+            const conservativeValues = baseValues.map(v => +(v * 0.89).toFixed(1));
+            const years = ['2026', '2027', '2028', '2029', '2030', '2031'];
+            const maxVal = Math.max(...optimisticValues);
+
+            return (
+              <>
+                <Card className="p-5 mb-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <IconSparkles size={16} stroke="#2FA4F9" sw={2} />
+                      <h2 className="text-sm font-semibold text-slate-900">Scenario Analysis</h2>
+                    </div>
+                  </div>
+
+                  {/* Scenario toggle bar */}
+                  <div className="flex items-center gap-2 mb-5">
+                    <span className="text-xs font-medium text-slate-500 mr-1">Scenario:</span>
+                    {([
+                      { key: 'base' as ScenarioType, label: 'Base Case' },
+                      { key: 'optimistic' as ScenarioType, label: 'Optimistic (+2% return)' },
+                      { key: 'conservative' as ScenarioType, label: 'Conservative (-2% return)' },
+                    ]).map(s => (
+                      <button
+                        key={s.key}
+                        onClick={() => setScenario(s.key)}
+                        className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition ${
+                          scenario === s.key
+                            ? 'bg-brand-500 text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* What-if slider */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-slate-500">Monthly contribution change</span>
+                      <span className="text-sm font-bold text-slate-900">
+                        {contributionDelta >= 0 ? '+' : ''}{contributionDelta > 0 ? `$${contributionDelta}K` : contributionDelta < 0 ? `$${contributionDelta}K` : '$0'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-slate-400 shrink-0">-$10K</span>
+                      <input
+                        type="range"
+                        min={-10}
+                        max={10}
+                        step={1}
+                        value={contributionDelta}
+                        onChange={e => setContributionDelta(Number(e.target.value))}
+                        className="flex-1 h-2 rounded-full appearance-none cursor-pointer accent-brand-500"
+                        style={{
+                          background: `linear-gradient(to right, #E2E8F0 0%, #E2E8F0 ${(contributionDelta + 10) / 20 * 100}%, #E2E8F0 ${(contributionDelta + 10) / 20 * 100}%, #E2E8F0 100%)`,
+                        }}
+                      />
+                      <span className="text-xs text-slate-400 shrink-0">+$10K</span>
+                    </div>
+                  </div>
+
+                  {/* Impact display */}
+                  <div className="bg-slate-50 rounded-xl px-4 py-3 flex items-center gap-3">
+                    <IconTrendUp size={16} stroke={totalImpactChange >= 0 ? '#10B981' : '#F43F5E'} sw={2} />
+                    <div>
+                      <span className="text-xs text-slate-500">Projected surplus/shortfall change: </span>
+                      <span className={`text-sm font-bold ${totalImpactChange >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {totalImpactChange >= 0 ? '+' : ''}{totalImpactChange >= 1_000_000 || totalImpactChange <= -1_000_000
+                          ? `$${(totalImpactChange / 1_000_000).toFixed(1)}M`
+                          : `$${(totalImpactChange / 1_000).toFixed(0)}K`}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Cash Flow Projection Chart */}
+                <Card className="p-5 mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-semibold text-slate-900">Cash Flow Projection — Portfolio Value Over 5 Years</h2>
+                    <Badge tone="purple">
+                      <IconSparkles size={10} /> Monte Carlo: 87% probability of reaching goal
+                    </Badge>
+                  </div>
+
+                  {/* Bar chart with 3 overlaid bars per year */}
+                  <div className="border border-slate-200 rounded-xl p-5">
+                    {/* Y-axis labels */}
+                    <div className="flex">
+                      <div className="w-14 shrink-0 flex flex-col justify-between text-[10px] text-slate-400 font-medium pr-2 h-52">
+                        <span>${Math.ceil(maxVal / 10) * 10}M</span>
+                        <span>${Math.ceil(maxVal / 10) * 5}M</span>
+                        <span>$0</span>
+                      </div>
+                      <div className="flex-1 flex items-end gap-4 h-52">
+                        {years.map((year, i) => {
+                          const bH = (baseValues[i] / maxVal) * 100;
+                          const oH = (optimisticValues[i] / maxVal) * 100;
+                          const cH = (conservativeValues[i] / maxVal) * 100;
+                          return (
+                            <div key={year} className="flex-1 flex items-end justify-center gap-1 h-full">
+                              <div
+                                className="w-4 rounded-t-sm transition-all"
+                                style={{ height: `${cH}%`, backgroundColor: '#F59E0B', opacity: 0.7 }}
+                                title={`Conservative: $${conservativeValues[i]}M`}
+                              />
+                              <div
+                                className="w-4 rounded-t-sm transition-all"
+                                style={{ height: `${bH}%`, backgroundColor: '#2FA4F9' }}
+                                title={`Base: $${baseValues[i]}M`}
+                              />
+                              <div
+                                className="w-4 rounded-t-sm transition-all"
+                                style={{ height: `${oH}%`, backgroundColor: '#10B981', opacity: 0.7 }}
+                                title={`Optimistic: $${optimisticValues[i]}M`}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* X-axis labels */}
+                    <div className="flex mt-2">
+                      <div className="w-14 shrink-0" />
+                      <div className="flex-1 flex gap-4">
+                        {years.map(y => (
+                          <div key={y} className="flex-1 text-center text-[11px] text-slate-500 font-medium">{y}</div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex items-center justify-center gap-5 mt-4 pt-3 border-t border-slate-100">
+                      {[
+                        { label: 'Conservative', color: '#F59E0B' },
+                        { label: 'Base Case', color: '#2FA4F9' },
+                        { label: 'Optimistic', color: '#10B981' },
+                      ].map(l => (
+                        <div key={l.label} className="flex items-center gap-1.5">
+                          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: l.color }} />
+                          <span className="text-xs text-slate-500">{l.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              </>
+            );
+          })()}
 
           {/* Goals list */}
           <div className="space-y-4">

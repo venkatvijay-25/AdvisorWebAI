@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IconX, IconShare, IconBrief, IconCheck, IconClock, IconLock, IconUsers, IconMail } from '@/components/icons';
+import { IconX, IconShare, IconBrief, IconCheck, IconClock, IconLock, IconUsers, IconMail, IconDownload, IconCalendar, IconUser } from '@/components/icons';
 import { Avatar, Badge, Button, Card, KPI } from '@/components/ui';
 
 /* ── Types ─────────────────────────────────────────── */
@@ -274,12 +274,176 @@ const ShareModal: React.FC<{
   );
 };
 
+/* ── Client Preview Modal ─────────────────────────── */
+
+const ClientPreviewModal: React.FC<{ client: PortalClient; onClose: () => void }> = ({ client, onClose }) => {
+  // Mock portfolio data
+  const totalValue = '$2,847,320';
+  const ytdReturn = '+8.4%';
+  const allocation = [
+    { label: 'US Equities', pct: 42, color: '#2FA4F9' },
+    { label: 'Int\'l Equities', pct: 18, color: '#7B5BFF' },
+    { label: 'Fixed Income', pct: 25, color: '#10B981' },
+    { label: 'Alternatives', pct: 10, color: '#F97316' },
+    { label: 'Cash', pct: 5, color: '#94A3B8' },
+  ];
+
+  const meetings = [
+    { title: 'Quarterly Portfolio Review', date: 'May 8, 2026 at 2:00 PM', type: 'Video Call' },
+    { title: 'Tax Planning Check-in', date: 'May 22, 2026 at 10:30 AM', type: 'Phone Call' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Close bar */}
+        <div className="shrink-0 px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Client Portal Preview</span>
+          <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition flex items-center gap-1.5">
+            <IconX size={14} stroke="#64748B" />
+            Close Preview
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto scroll-thin">
+          {/* Branded header */}
+          <div className="bg-gradient-to-r from-[#2FA4F9] to-[#1B7FD4] px-8 py-8 text-white">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <span className="text-sm font-bold text-white">F</span>
+              </div>
+              <span className="text-sm font-semibold tracking-wide opacity-90">FlyerFT Wealth</span>
+            </div>
+            <h2 className="text-xl font-bold">Welcome back, {client.name.split(' ')[0]}</h2>
+            <p className="text-sm opacity-80 mt-1">Here is your latest portfolio summary and documents.</p>
+          </div>
+
+          <div className="px-8 py-6 space-y-6">
+            {/* Portfolio Summary */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <div className="h-5 w-5 rounded bg-brand-50 flex items-center justify-center">
+                  <IconBrief size={12} stroke="#2FA4F9" sw={2} />
+                </div>
+                Portfolio Summary
+              </h3>
+              <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Total Value</div>
+                    <div className="text-2xl font-bold text-slate-900">{totalValue}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-1">YTD Return</div>
+                    <div className="text-2xl font-bold text-emerald-600">{ytdReturn}</div>
+                  </div>
+                </div>
+                {/* Allocation bar */}
+                <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2">Asset Allocation</div>
+                <div className="flex rounded-full overflow-hidden h-3 mb-2">
+                  {allocation.map(a => (
+                    <div key={a.label} style={{ width: `${a.pct}%`, backgroundColor: a.color }} className="h-full" />
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {allocation.map(a => (
+                    <div key={a.label} className="flex items-center gap-1.5">
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: a.color }} />
+                      <span className="text-[11px] text-slate-600">{a.label} ({a.pct}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Documents */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <div className="h-5 w-5 rounded bg-brand-50 flex items-center justify-center">
+                  <IconBrief size={12} stroke="#2FA4F9" sw={2} />
+                </div>
+                Recent Documents
+              </h3>
+              <div className="space-y-2">
+                {(client.documents.length > 0 ? client.documents : [
+                  { id: 'mock1', name: 'Q1 2026 Portfolio Review', type: 'Portfolio Review' as DocumentType, sharedDate: 'Apr 10, 2026', viewed: true, expiryDate: null },
+                ]).map(doc => (
+                  <div key={doc.id} className="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-100 hover:border-slate-200 transition">
+                    <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                      <IconBrief size={16} stroke="#475569" sw={1.8} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium text-slate-900 truncate">{doc.name}</div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">Shared {doc.sharedDate}</div>
+                    </div>
+                    <button className="p-2 rounded-lg hover:bg-slate-50 transition" title="Download">
+                      <IconDownload size={15} stroke="#64748B" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Upcoming Meetings */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <div className="h-5 w-5 rounded bg-brand-50 flex items-center justify-center">
+                  <IconCalendar size={12} stroke="#2FA4F9" sw={2} />
+                </div>
+                Upcoming Meetings
+              </h3>
+              <div className="space-y-2">
+                {meetings.map((m, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-100">
+                    <div className="h-9 w-9 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
+                      <IconCalendar size={16} stroke="#7B5BFF" sw={1.8} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium text-slate-900">{m.title}</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">{m.date}</div>
+                    </div>
+                    <Badge tone="neutral">{m.type}</Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Contact Your Advisor */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <div className="h-5 w-5 rounded bg-brand-50 flex items-center justify-center">
+                  <IconUser size={12} stroke="#2FA4F9" sw={2} />
+                </div>
+                Contact Your Advisor
+              </h3>
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="h-11 w-11 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-sm shrink-0">VV</div>
+                <div className="flex-1">
+                  <div className="text-[13px] font-semibold text-slate-900">Vijay Venkat</div>
+                  <div className="text-[12px] text-slate-500">Senior Wealth Advisor</div>
+                  <div className="text-[12px] text-brand-600 mt-0.5">venkat.vijay@flyerft.com</div>
+                </div>
+                <button className="px-3 py-2 rounded-lg text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition flex items-center gap-1.5">
+                  <IconMail size={13} stroke="#2FA4F9" />
+                  Message
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ── Main component ────────────────────────────────── */
 
 export const ClientPortalView: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharePreselect, setSharePreselect] = useState<string | undefined>(undefined);
+  const [showPreview, setShowPreview] = useState(false);
 
   const selectedClient = selectedClientId
     ? PORTAL_CLIENTS.find(c => c.id === selectedClientId) || null
@@ -306,6 +470,11 @@ export const ClientPortalView: React.FC = () => {
           preselectedClientId={sharePreselect}
           onClose={() => { setShowShareModal(false); setSharePreselect(undefined); }}
         />
+      )}
+
+      {/* Client preview modal */}
+      {showPreview && selectedClient && selectedClient.status === 'active' && (
+        <ClientPreviewModal client={selectedClient} onClose={() => setShowPreview(false)} />
       )}
 
       {/* Header */}
@@ -438,12 +607,23 @@ export const ClientPortalView: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedClientId(null)}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 transition"
-                >
-                  <IconX size={18} stroke="#64748B" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {selectedClient.status === 'active' && (
+                    <button
+                      onClick={() => setShowPreview(true)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition flex items-center gap-1.5"
+                    >
+                      <IconUser size={13} stroke="#2FA4F9" />
+                      Preview as client
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedClientId(null)}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 transition"
+                  >
+                    <IconX size={18} stroke="#64748B" />
+                  </button>
+                </div>
               </div>
             </Card>
 

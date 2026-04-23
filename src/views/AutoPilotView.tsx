@@ -131,7 +131,7 @@ export const AutoPilotView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6 pb-8">
       {/* ============ HEADER ============ */}
       <div className="fade-up flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">

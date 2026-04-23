@@ -91,7 +91,7 @@ export const BatchActionsView: React.FC<BatchActionsViewProps> = ({ openTemplate
   const showPreview = selected.size > 0 && selectedTemplate !== null && batchState === 'idle';
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
+    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6 pb-12">
       {/* Header */}
       <div className="fade-up">
         <div className="flex items-center gap-3 mb-1">
